@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Contratos</title>
+    <style>
+        :root {
+            /* Tema Escuro (Padrão) */
+            --bg-main: #0d0f1a;
+            --bg-surface: #151827;
+            --bg-surface-hover: #1f2338;
+            --accent: #7c3aed;
+            --accent-hover: #6d28d9;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #1e293b;
+            --error: #ef4444;
+            --success: #10b981;
+            
+            --sidebar-width: 250px;
+            --radius: 8px;
+            --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        [data-theme="light"] {
+            --bg-main: #f8f9fa;
+            --bg-surface: #ffffff;
+            --bg-surface-hover: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font);
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1, h2, h3, h4 { color: var(--text-main); margin-bottom: 1rem; }
+        p { color: var(--text-muted); margin-bottom: 1rem; }
+
+        /* Utilitários */
+        .text-accent { color: var(--accent); }
+        .flex { display: flex; }
+        .flex-col { display: flex; flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .w-full { width: 100%; }
+        .hidden { display: none !important; }
+
+        /* Formulários */
+        .form-group { margin-bottom: 1rem; display: flex; flex-direction: column; }
+        label { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        input, select, textarea {
+            background-color: var(--bg-main);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            outline: none;
+        }
+        input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+        input[readonly] { background-color: var(--bg-surface); opacity: 0.7; cursor: not-allowed; }
+        .input-error { border-color: var(--error) !important; }
+
+        /* Botões */
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: var(--radius);
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        .btn-primary { background-color: var(--accent); color: #fff; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-small { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+
+        /* Telas de Autenticação */
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .auth-card {
+            background-color: var(--bg-surface);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .auth-link { color: var(--accent); cursor: pointer; font-size: 0.9rem; text-align: center; margin-top: 1rem; display: block; text-decoration: none; }
+        .auth-link:hover { text-decoration: underline; }
+
+        /* Layout Principal */
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 0;
+        }
+        .profile-section {
+            padding: 0 1.5rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        .profile-info { flex: 1; overflow: hidden; }
+        .profile-name { font-weight: 600; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .logout-btn { cursor: pointer; color: var(--text-muted); font-size: 0.8rem; margin-top: 5px; display: inline-block; }
+        .logout-btn:hover { color: var(--error); }
+
+        .nav-list { list-style: none; flex: 1; }
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            border-left: 3px solid transparent;
+        }
+        .nav-item:hover { background-color: var(--bg-main); color: var(--text-main); }
+        .nav-item.active { background-color: var(--bg-main); color: var(--accent); border-left-color: var(--accent); }
+
+        /* Área Principal */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            background-color: var(--bg-main);
+        }
+
+        .section-container { max-width: 1400px; margin: 0 auto; }
+        .page-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .col-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .col-card h3 {
+            font-size: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+
+        .input-with-btn { display: flex; gap: 0.5rem; }
+        .input-with-btn input { flex: 1; }
+
+        /* Prévia */
+        .preview-wrapper {
+            flex: 1;
+            background-color: var(--bg-main);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            overflow-y: auto;
+            font-family: 'Times New Roman', Times, serif;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+            max-height: 400px;
+        }
+        .preview-actions { display: flex; gap: 1rem; }
+
+        .contract-info-section {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .full-width { grid-column: 1 / -1; }
+
+        /* Listas de Cards */
+        .card-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        .data-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+        }
+        .data-card-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .data-card-subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem; }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background-color: var(--bg-main);
+        }
+        .badge.active { color: var(--success); border: 1px solid var(--success); }
+        .badge.draft { color: var(--text-muted); border: 1px solid var(--border); }
+
+        .client-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+
+        /* Histórico */
+        .history-list { display: flex; flex-direction: column; gap: 1rem; }
+        .history-item {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+        }
+        .history-item:hover { border-color: var(--accent); }
+        .history-header { display: flex; justify-content: space-between; align-items: center; }
+        .history-time { color: var(--text-muted); font-size: 0.85rem; }
+        .history-details { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border); display: none; }
+        .history-item.expanded .history-details { display: block; }
+        .history-preview { background-color: var(--bg-main); padding: 1rem; border-radius: 4px; font-family: 'Times New Roman', serif; font-size: 0.9rem; margin-top: 0.5rem; }
+
+        /* Configurações */
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .settings-section {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+        }
+        .settings-section h3 { border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        
+        /* Modal Cliente */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .settings-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="auth-container">
+        <div class="auth-card">
+            <h2 class="text-accent" style="text-align: center; margin-bottom: 2rem;">Gerador de Contratos</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="login-email" required placeholder="usuario@exemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="login-password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary w-full" style="margin-top: 1rem;">Entrar</button>
+                <a class="auth-link" id="go-to-register">Não tem uma conta? Cadastre-se</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- TELA DE CADASTRO -->
+    <div id="register-screen" class="auth-container hidden">
+        <div class="auth-card">
+            <h2 class="text-accent" style="text-align: center; margin-bottom: 2rem;">Criar Conta</h2>
+            <form id="register-form">
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input type="text" id="reg-name" required placeholder="João da Silva">
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="reg-email" required placeholder="usuario@exemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="reg-password" required placeholder="••••••••">
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Senha</label>
+                    <input type="password" id="reg-confirm" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary w-full" style="margin-top: 1rem;">Cadastrar</button>
+                <a class="auth-link" id="go-to-login">Já tem uma conta? Entrar</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP PRINCIPAL -->
+    <div id="app-layout" class="app-container hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="profile-section">
+                <div class="avatar" id="sidebar-avatar">U</div>
+                <div class="profile-info">
+                    <div class="profile-name" id="sidebar-name">Nome do Usuário</div>
+                    <a class="logout-btn" id="logout-btn">Sair</a>
+                </div>
+            </div>
+            <ul class="nav-list">
+                <li class="nav-item active" data-target="dashboard-section">Dashboard</li>
+                <li class="nav-item" data-target="contracts-section">Contratos</li>
+                <li class="nav-item" data-target="clients-section">Clientes</li>
+                <li class="nav-item" data-target="history-section">Histórico</li>
+                <li class="nav-item" data-target="settings-section">Configurações</li>
+            </ul>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            
+            <!-- DASHBOARD / GERADOR DE CONTRATOS -->
+            <div id="dashboard-section" class="section-container">
+                <div class="page-header">
+                    <h2>Gerador de Contratos</h2>
+                    <button class="btn-outline btn-small" id="clear-form-btn">Limpar Formulário</button>
+                </div>
+
+                <div class="dashboard-grid">
+                    <!-- Coluna 1: Contratante -->
+                    <div class="col-card">
+                        <h3>DADOS DO CONTRATANTE</h3>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <input type="text" value="CONTRATANTE" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>CPF/CNPJ</label>
+                            <div class="input-with-btn">
+                                <input type="text" id="tor-doc" placeholder="000.000.000-00" class="auto-save">
+                                <button class="btn-outline btn-small" type="button" onclick="searchClient('tor-doc', 'tor')">Buscar</button>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Nome Completo</label><input type="text" id="tor-name" class="auto-save required"></div>
+                        <div class="form-group"><label>E-mail</label><input type="email" id="tor-email" class="auto-save"></div>
+                        <div class="form-group">
+                            <label>CEP</label>
+                            <div class="input-with-btn">
+                                <input type="text" id="tor-zip" class="auto-save" placeholder="00000-000">
+                                <button class="btn-outline btn-small" type="button" onclick="searchViaCEP('tor')">Buscar</button>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Endereço (Logradouro)</label><input type="text" id="tor-address" class="auto-save"></div>
+                        <div class="flex gap-2">
+                            <div class="form-group" style="flex:1"><label>Número</label><input type="text" id="tor-number" class="auto-save"></div>
+                            <div class="form-group" style="flex:1"><label>Complemento</label><input type="text" id="tor-comp" class="auto-save"></div>
+                        </div>
+                        <div class="form-group"><label>Bairro</label><input type="text" id="tor-neigh" class="auto-save"></div>
+                        <div class="form-group"><label>Cidade/Estado</label><input type="text" id="tor-city" class="auto-save"></div>
+                    </div>
+
+                    <!-- Coluna 2: Contratada -->
+                    <div class="col-card">
+                        <h3>DADOS DA CONTRATADA</h3>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <input type="text" value="CONTRATADA" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>CPF/CNPJ</label>
+                            <div class="input-with-btn">
+                                <input type="text" id="tee-doc" placeholder="00.000.000/0001-00" class="auto-save">
+                                <button class="btn-outline btn-small" type="button" onclick="searchClient('tee-doc', 'tee')">Buscar</button>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Nome Completo</label><input type="text" id="tee-name" class="auto-save required"></div>
+                        <div class="form-group"><label>E-mail</label><input type="email" id="tee-email" class="auto-save"></div>
+                        <div class="form-group">
+                            <label>CEP</label>
+                            <div class="input-with-btn">
+                                <input type="text" id="tee-zip" class="auto-save" placeholder="00000-000">
+                                <button class="btn-outline btn-small" type="button" onclick="searchViaCEP('tee')">Buscar</button>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Endereço (Logradouro)</label><input type="text" id="tee-address" class="auto-save"></div>
+                        <div class="flex gap-2">
+                            <div class="form-group" style="flex:1"><label>Número</label><input type="text" id="tee-number" class="auto-save"></div>
+                            <div class="form-group" style="flex:1"><label>Complemento</label><input type="text" id="tee-comp" class="auto-save"></div>
+                        </div>
+                        <div class="form-group"><label>Bairro</label><input type="text" id="tee-neigh" class="auto-save"></div>
+                        <div class="form-group"><label>Cidade/Estado</label><input type="text" id="tee-city" class="auto-save"></div>
+                    </div>
+
+                    <!-- Coluna 3: Prévia -->
+                    <div class="col-card">
+                        <h3>PRÉVIA DO DOCUMENTO</h3>
+                        <div class="preview-wrapper" id="live-preview">
+                            <!-- Conteúdo da prévia -->
+                        </div>
+                        <div class="preview-actions">
+                            <button class="btn-primary w-full" id="btn-gen-pdf">📄 Gerar PDF</button>
+                            <button class="btn-outline w-full" id="btn-gen-docx">📝 Gerar DOCX</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informações do Contrato -->
+                <div class="contract-info-section">
+                    <h3>INFORMAÇÕES DO CONTRATO</h3>
+                    <div class="info-grid">
+                        <div class="form-group"><label>Título do Contrato</label><input type="text" id="info-title" class="auto-save required" value="Contrato de Prestação de Serviços"></div>
+                        <div class="form-group"><label>Valor do Contrato</label><input type="text" id="info-value" class="auto-save" placeholder="R$ 0,00"></div>
+                        <div class="form-group"><label>Data de Início</label><input type="date" id="info-start" class="auto-save required"></div>
+                        <div class="form-group"><label>Data de Término</label><input type="date" id="info-end" class="auto-save"></div>
+                        <div class="form-group">
+                            <label>Termos de Pagamento</label>
+                            <select id="info-payment" class="auto-save">
+                                <option value="Mensal">Mensal</option>
+                                <option value="À vista">À vista</option>
+                                <option value="Parcelado">Parcelado</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width"><label>Descrição do Serviço</label><textarea id="info-desc" rows="3" class="auto-save"></textarea></div>
+                        <div class="form-group full-width"><label>Cláusulas Adicionais</label><textarea id="info-clauses" rows="3" class="auto-save"></textarea></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO DE CONTRATOS -->
+            <div id="contracts-section" class="section-container hidden">
+                <div class="page-header">
+                    <h2>Contratos Gerados (Sessão Atual)</h2>
+                </div>
+                <div id="contracts-list" class="card-list"></div>
+            </div>
+
+            <!-- SEÇÃO DE CLIENTES -->
+            <div id="clients-section" class="section-container hidden">
+                <div class="page-header">
+                    <h2>Clientes Salvos</h2>
+                    <button class="btn-primary" id="btn-add-client">Adicionar Novo Cliente</button>
+                </div>
+                <div id="clients-list" class="card-list"></div>
+            </div>
+
+            <!-- SEÇÃO DE HISTÓRICO -->
+            <div id="history-section" class="section-container hidden">
+                <div class="page-header">
+                    <h2>Histórico de Contratos</h2>
+                </div>
+                <div id="history-list" class="history-list"></div>
+            </div>
+
+            <!-- SEÇÃO DE CONFIGURAÇÕES -->
+            <div id="settings-section" class="section-container hidden">
+                <div class="page-header">
+                    <h2>Configurações</h2>
+                </div>
+                <div class="settings-grid">
+                    <div class="settings-section">
+                        <h3>Aparência</h3>
+                        <div class="toggle-container">
+                            <label style="margin:0;">Modo Escuro</label>
+                            <input type="checkbox" id="set-darkmode" checked style="width:20px;height:20px;">
+                        </div>
+                        <div class="form-group">
+                            <label>Cor de Destaque</label>
+                            <input type="color" id="set-accent" value="#7c3aed" style="width:100%;height:40px;padding:0;">
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Perfil</h3>
+                        <div class="form-group"><label>Nome de Exibição</label><input type="text" id="set-name"></div>
+                        <div class="form-group"><label>E-mail</label><input type="email" id="set-email"></div>
+                        <button class="btn-outline btn-small w-full" id="btn-update-profile">Atualizar Perfil</button>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Padrões de Contrato</h3>
+                        <div class="form-group">
+                            <label>Termos de Pagamento Padrão</label>
+                            <select id="set-payment">
+                                <option value="Mensal">Mensal</option>
+                                <option value="À vista">À vista</option>
+                                <option value="Parcelado">Parcelado</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3>Gerenciamento de Dados</h3>
+                        <div class="flex-col gap-2">
+                            <button class="btn-outline w-full" id="btn-clear-clients">Apagar Clientes Salvos</button>
+                            <button class="btn-outline w-full" id="btn-clear-history">Apagar Histórico</button>
+                            <button class="btn-primary w-full" id="btn-export-data">Exportar Dados (JSON)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DE CLIENTE -->
+    <div id="client-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <h3 class="text-accent">Adicionar Novo Cliente</h3>
+            <form id="client-form">
+                <div class="form-group"><label>Nome Completo</label><input type="text" id="mc-name" required></div>
+                <div class="form-group"><label>CPF/CNPJ</label><input type="text" id="mc-doc" required></div>
+                <div class="form-group"><label>E-mail</label><input type="email" id="mc-email"></div>
+                <div class="flex gap-2">
+                    <div class="form-group" style="flex:1">
+                        <label>CEP</label>
+                        <input type="text" id="mc-zip" onblur="searchViaCEPModal(this.value)">
+                    </div>
+                    <div class="form-group" style="flex:2"><label>Endereço</label><input type="text" id="mc-address"></div>
+                </div>
+                <div class="flex gap-2">
+                    <div class="form-group" style="flex:1"><label>Número</label><input type="text" id="mc-number"></div>
+                    <div class="form-group" style="flex:1"><label>Comp.</label><input type="text" id="mc-comp"></div>
+                </div>
+                <div class="flex gap-2">
+                    <div class="form-group" style="flex:1"><label>Bairro</label><input type="text" id="mc-neigh"></div>
+                    <div class="form-group" style="flex:1"><label>Cidade/Estado</label><input type="text" id="mc-city"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-outline" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+        <script>
+        const API_URL = "http://localhost:8000";
+
+        let appState = {
+            currentUser: null,
+            settings: { darkMode: true, accentColor: '#7c3aed', defaultPayment: 'Mensal' },
+            clients: [],
+            contracts: [],
+            history: [],
+            draft: {},
+            govbrConnected: false
+        };
+
+        const setToken = (token) => localStorage.setItem('auth_token', token);
+        const getToken = () => localStorage.getItem('auth_token');
+        const clearToken = () => localStorage.removeItem('auth_token');
+
+        
+        function toggleLoading(show) {
+            let loader = document.getElementById('global-loader');
+            if (!loader) {
+                loader = document.createElement('div');
+                loader.id = 'global-loader';
+                loader.innerHTML = '<div style="border: 4px solid #f3f3f3; border-top: 4px solid var(--accent); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div><style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>';
+                loader.style.position = 'fixed';
+                loader.style.top = '0';
+                loader.style.left = '0';
+                loader.style.width = '100vw';
+                loader.style.height = '100vh';
+                loader.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                loader.style.display = 'flex';
+                loader.style.justifyContent = 'center';
+                loader.style.alignItems = 'center';
+                loader.style.zIndex = '9999';
+                document.body.appendChild(loader);
+            }
+            loader.style.display = show ? 'flex' : 'none';
+        }
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const token = getToken();
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+
+            const options = { method, headers };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            toggleLoading(true);
+            try {
+                const res = await fetch(`${API_URL}${endpoint}`, options);
+                
+                if (res.status === 401) {
+                    clearToken();
+                    showScreen('login-screen');
+                    document.getElementById('app-layout').classList.add('hidden');
+                    throw new Error("Sessão expirada. Faça login novamente.");
+                }
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `Erro na requisição: ${res.status}`);
+                }
+                
+                if (res.status === 204) return null;
+                return await res.json();
+            } catch (error) {
+                alert(error.message);
+                throw error;
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('govbr') === 'success') {
+                appState.govbrConnected = true;
+                window.history.replaceState({}, document.title, window.location.pathname);
+                setTimeout(() => {
+                    document.querySelector('.nav-item[data-target="contracts-section"]').click();
+                }, 500);
+            }
+
+            if (getToken()) {
+                try {
+                    await loadUser();
+                    showMainApp();
+                } catch (e) {
+                    showScreen('login-screen');
+                }
+            } else {
+                showScreen('login-screen');
+            }
+            bindEvents();
+            updatePreview();
+        });
+
+        async function loadUser() {
+            appState.currentUser = await apiCall('/users/me');
+            appState.settings = appState.currentUser.settings || appState.settings;
+            applySettings();
+        }
+
+        async function loadData() {
+            try {
+                appState.clients = await apiCall('/clients');
+                appState.contracts = await apiCall('/contracts');
+                appState.history = await apiCall('/history');
+                renderClients();
+                renderContracts();
+                renderHistory();
+            } catch (e) {
+                console.error("Failed to load data", e);
+            }
+        }
+
+        // --- AUTH ---
+        document.getElementById('go-to-register').addEventListener('click', () => showScreen('register-screen'));
+        document.getElementById('go-to-login').addEventListener('click', () => showScreen('login-screen'));
+        
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                const res = await apiCall('/auth/login', 'POST', { email, password });
+                setToken(res.access_token);
+                await loadUser();
+                showMainApp();
+            } catch(e) {}
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            if (password !== confirm) return alert("As senhas não coincidem");
+            
+            try {
+                const res = await apiCall('/auth/register', 'POST', { name, email, password });
+                setToken(res.access_token);
+                await loadUser();
+                showMainApp();
+            } catch(e) {}
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            clearToken();
+            appState.currentUser = null;
+            showScreen('login-screen');
+            document.getElementById('app-layout').classList.add('hidden');
+        });
+
+        // --- NAVIGATION ---
+        function showScreen(screenId) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('register-screen').classList.add('hidden');
+            if (screenId === 'login-screen' || screenId === 'register-screen') {
+                document.getElementById(screenId).classList.remove('hidden');
+            }
+        }
+
+        function showMainApp() {
+            showScreen('');
+            document.getElementById('app-layout').classList.remove('hidden');
+            
+            const name = appState.currentUser.name;
+            document.getElementById('sidebar-name').textContent = name;
+            document.getElementById('sidebar-avatar').textContent = name.charAt(0).toUpperCase();
+            
+            document.getElementById('set-name').value = name;
+            document.getElementById('set-email').value = appState.currentUser.email;
+
+            loadData();
+        }
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                
+                const target = e.currentTarget.getAttribute('data-target');
+                document.querySelectorAll('.section-container').forEach(s => s.classList.add('hidden'));
+                document.getElementById(target).classList.remove('hidden');
+                
+                if(target === 'clients-section') renderClients();
+                if(target === 'history-section') renderHistory();
+                if(target === 'contracts-section') renderContracts();
+            });
+        });
+
+        async function applySettings() {
+            const { darkMode, accentColor, defaultPayment } = appState.settings;
+            document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+            document.documentElement.style.setProperty('--accent', accentColor || '#7c3aed');
+            
+            document.getElementById('set-darkmode').checked = darkMode;
+            document.getElementById('set-accent').value = accentColor || '#7c3aed';
+            document.getElementById('set-payment').value = defaultPayment || 'Mensal';
+        }
+
+        // --- DASHBOARD FORMS & AUTOSAVE ---
+        const autoSaveInputs = document.querySelectorAll('.auto-save');
+        autoSaveInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                input.classList.remove('input-error');
+                appState.draft[input.id] = input.value;
+                updatePreview();
+            });
+        });
+
+        document.getElementById('clear-form-btn').addEventListener('click', () => {
+            if(confirm('Limpar todos os campos?')) {
+                autoSaveInputs.forEach(input => input.value = '');
+                appState.draft = {};
+                updatePreview();
+            }
+        });
+
+        // --- VIACEP INTEGRATION ---
+        async function fetchViaCEP(cepStr) {
+            const cep = cepStr.replace(/\D/g, '');
+            if (cep.length !== 8) return null;
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const data = await response.json();
+                if (data.erro) {
+                    alert('CEP não encontrado.');
+                    return null;
+                }
+                return data;
+            } catch (error) {
+                alert('Erro ao buscar o CEP.');
+                return null;
+            }
+        }
+
+        async function searchViaCEP(prefix) {
+            const zipInput = document.getElementById(`${prefix}-zip`);
+            const data = await fetchViaCEP(zipInput.value);
+            if (data) {
+                document.getElementById(`${prefix}-address`).value = data.logradouro;
+                document.getElementById(`${prefix}-neigh`).value = data.bairro;
+                document.getElementById(`${prefix}-city`).value = `${data.localidade} / ${data.uf}`;
+                
+                ['address', 'neigh', 'city'].forEach(f => {
+                    appState.draft[`${prefix}-${f}`] = document.getElementById(`${prefix}-${f}`).value;
+                });
+                updatePreview();
+                document.getElementById(`${prefix}-number`).focus();
+            }
+        }
+
+        async function searchViaCEPModal(zipValue) {
+            const data = await fetchViaCEP(zipValue);
+            if (data) {
+                document.getElementById('mc-address').value = data.logradouro;
+                document.getElementById('mc-neigh').value = data.bairro;
+                document.getElementById('mc-city').value = `${data.localidade} / ${data.uf}`;
+                document.getElementById('mc-number').focus();
+            }
+        }
+
+        document.getElementById('tor-zip').addEventListener('blur', (e) => searchViaCEP('tor'));
+        document.getElementById('tee-zip').addEventListener('blur', (e) => searchViaCEP('tee'));
+
+        function searchClient(inputId, prefix) {
+            const doc = document.getElementById(inputId).value;
+            const client = appState.clients.find(c => c.document === doc || c.doc === doc); // Handle new or old format
+            if (client) {
+                fillFormWithClient(client, prefix);
+            } else {
+                alert('Cliente não encontrado nos registros salvos.');
+            }
+        }
+
+        // --- CLIENTS ---
+        document.getElementById('btn-add-client').addEventListener('click', () => {
+            document.getElementById('client-form').reset();
+            document.getElementById('client-modal').classList.remove('hidden');
+        });
+
+        function closeModal() { document.getElementById('client-modal').classList.add('hidden'); }
+
+        document.getElementById('client-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const clientData = {
+                name: document.getElementById('mc-name').value,
+                document: document.getElementById('mc-doc').value,
+                email: document.getElementById('mc-email').value,
+                zip_code: document.getElementById('mc-zip').value,
+                address: document.getElementById('mc-address').value,
+                number: document.getElementById('mc-number').value,
+                complement: document.getElementById('mc-comp').value,
+                neighborhood: document.getElementById('mc-neigh').value,
+                city_state: document.getElementById('mc-city').value
+            };
+            try {
+                const newClient = await apiCall('/clients', 'POST', clientData);
+                appState.clients.push(newClient);
+                closeModal();
+                renderClients();
+            } catch(e) {}
+        });
+
+        function renderClients() {
+            const list = document.getElementById('clients-list');
+            list.innerHTML = '';
+            appState.clients.forEach(c => {
+                const docValue = c.document || c.doc || '';
+                const zipValue = c.zip_code || c.zip || '';
+                const compValue = c.complement || c.comp || '';
+                const neighValue = c.neighborhood || c.neigh || '';
+                const cityValue = c.city_state || c.city || '';
+                
+                const clientForForm = {
+                    name: c.name, doc: docValue, email: c.email, zip: zipValue,
+                    address: c.address, number: c.number, comp: compValue, neigh: neighValue, city: cityValue
+                };
+                
+                const card = document.createElement('div');
+                card.className = 'data-card';
+                card.innerHTML = `
+                    <div class="data-card-title">${c.name}</div>
+                    <div class="data-card-subtitle">${docValue} | ${c.email || ''}</div>
+                    <p style="font-size:0.85rem; margin-bottom:0;">${c.address || ''}, ${c.number || ''} - ${cityValue}</p>
+                    <div class="client-actions">
+                        <button class="btn-outline btn-small" onclick='fillFormWithClient(${JSON.stringify(clientForForm).replace(/'/g, "\\'")}, "tor")'>Usar como Contratante</button>
+                        <button class="btn-outline btn-small" onclick='fillFormWithClient(${JSON.stringify(clientForForm).replace(/'/g, "\\'")}, "tee")'>Usar como Contratada</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        window.fillFormWithClient = function(client, prefix) {
+            document.getElementById(`${prefix}-name`).value = client.name || '';
+            document.getElementById(`${prefix}-doc`).value = client.doc || '';
+            document.getElementById(`${prefix}-email`).value = client.email || '';
+            document.getElementById(`${prefix}-zip`).value = client.zip || '';
+            document.getElementById(`${prefix}-address`).value = client.address || '';
+            document.getElementById(`${prefix}-number`).value = client.number || '';
+            document.getElementById(`${prefix}-comp`).value = client.comp || '';
+            document.getElementById(`${prefix}-neigh`).value = client.neigh || '';
+            document.getElementById(`${prefix}-city`).value = client.city || '';
+            
+            ['name', 'doc', 'email', 'zip', 'address', 'number', 'comp', 'neigh', 'city'].forEach(f => {
+                appState.draft[`${prefix}-${f}`] = client[f] || '';
+            });
+            
+            document.querySelector('.nav-item[data-target="dashboard-section"]').click();
+            updatePreview();
+        }
+
+        // --- PREVIEW & GENERATION ---
+        function getContractText() {
+            const d = appState.draft;
+            const title = d['info-title'] || 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS';
+            const torName = d['tor-name'] || '[NOME DO CONTRATANTE]';
+            const torDoc = d['tor-doc'] || '[CPF/CNPJ]';
+            const teeName = d['tee-name'] || '[NOME DA CONTRATADA]';
+            const teeDoc = d['tee-doc'] || '[CPF/CNPJ]';
+            const val = d['info-value'] || '[VALOR]';
+            const start = d['info-start'] || '[DATA]';
+            const payment = d['info-payment'] || 'Mensal';
+            const desc = d['info-desc'] || '[DESCRIÇÃO DOS SERVIÇOS]';
+            const clauses = d['info-clauses'] || '';
+
+            const dateStr = new Date().toLocaleDateString('pt-BR');
+
+            return `
+<h2 style="text-align:center; text-transform:uppercase; margin-bottom: 2rem;">${title}</h2>
+
+<p><strong>1. DAS PARTES</strong></p>
+<p><strong>CONTRATANTE:</strong> ${torName}, inscrito(a) sob o documento ${torDoc}, residente e domiciliado(a) em ${d['tor-address'] || ''}, ${d['tor-number'] || ''}, ${d['tor-city'] || ''}, doravante denominado(a) CONTRATANTE.</p>
+<p><strong>CONTRATADA:</strong> ${teeName}, inscrito(a) sob o documento ${teeDoc}, com sede em ${d['tee-address'] || ''}, ${d['tee-number'] || ''}, ${d['tee-city'] || ''}, doravante denominado(a) CONTRATADA.</p>
+
+<p><strong>2. DO OBJETO DO CONTRATO</strong></p>
+<p>A CONTRATADA compromete-se a fornecer os seguintes serviços à CONTRATANTE: ${desc}.</p>
+
+<p><strong>3. DO PAGAMENTO E PRAZOS</strong></p>
+<p>O valor total deste contrato é de ${val}. O pagamento será realizado da seguinte forma: ${payment}.</p>
+<p>Os serviços terão início em ${start.split('-').reverse().join('/')} e término previsto para ${d['info-end'] ? d['info-end'].split('-').reverse().join('/') : '[DATA DE TÉRMINO]'}.</p>
+
+${clauses ? `<p><strong>4. CLÁUSULAS ADICIONAIS</strong></p><p>${clauses.replace(/\n/g, '<br>')}</p>` : ''}
+
+<p style="margin-top:3rem;">E, por estarem de acordo, as partes assinam o presente contrato.</p>
+
+<div style="display:flex; justify-content:space-between; margin-top: 4rem;">
+    <div style="text-align:center; width: 45%;">
+        <hr style="border:0; border-bottom:1px solid #000; margin-bottom:10px;">
+        <p>${torName}<br>CONTRATANTE</p>
+    </div>
+    <div style="text-align:center; width: 45%;">
+        <hr style="border:0; border-bottom:1px solid #000; margin-bottom:10px;">
+        <p>${teeName}<br>CONTRATADA</p>
+    </div>
+</div>
+<p style="text-align:center; margin-top:2rem;">Documento gerado em: ${dateStr}</p>
+            `;
+        }
+
+        function updatePreview() {
+            document.getElementById('live-preview').innerHTML = getContractText();
+        }
+
+        function validateForm() {
+            let valid = true;
+            document.querySelectorAll('.required').forEach(el => {
+                if(!el.value.trim()) {
+                    el.classList.add('input-error');
+                    valid = false;
+                }
+            });
+            return valid;
+        }
+
+        async function recordGeneration(actionType = "created") {
+            const d = appState.draft;
+            const contractData = {
+                title: d['info-title'] || 'Contrato',
+                status: 'Ativo',
+                contractor_data: {
+                    name: d['tor-name'], doc: d['tor-doc'], email: d['tor-email'],
+                    address: d['tor-address'], number: d['tor-number'], city: d['tor-city']
+                },
+                contractee_data: {
+                    name: d['tee-name'], doc: d['tee-doc'], email: d['tee-email'],
+                    address: d['tee-address'], number: d['tee-number'], city: d['tee-city']
+                },
+                contract_info: {
+                    value: d['info-value'], start: d['info-start'], end: d['info-end'],
+                    payment: d['info-payment'], desc: d['info-desc'], clauses: d['info-clauses']
+                }
+            };
+            try {
+                const newContract = await apiCall('/contracts', 'POST', contractData);
+                appState.contracts.push(newContract);
+                
+                // History is automatically created by backend for 'created'
+                if (actionType !== "created") {
+                    await apiCall('/history', 'POST', {
+                        action: actionType,
+                        contract_id: newContract.id,
+                        details: { generated_doc: true }
+                    });
+                }
+                
+                await loadData(); // Reload to get updated history
+            } catch (e) {
+                console.error("Error recording contract", e);
+            }
+        }
+
+        document.getElementById('btn-gen-pdf').addEventListener('click', async () => {
+            if(!validateForm()) return alert('Por favor, preencha os campos obrigatórios (em vermelho).');
+            
+            const contractHTML = getContractText();
+            await recordGeneration("pdf_generated");
+            
+            const printWindow = window.open('', '_blank', 'width=800,height=900');
+            if(!printWindow) return alert('Por favor, permita pop-ups para imprimir o PDF.');
+            
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>Impressão do Contrato</title>
+                    <style>
+                        @page { size: A4; margin: 2cm; }
+                        body { 
+                            font-family: 'Times New Roman', Times, serif; 
+                            font-size: 12pt; 
+                            line-height: 1.5; 
+                            color: #000; 
+                            background: #fff;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${contractHTML}
+                    <script>
+                        setTimeout(() => {
+                            window.print();
+                            window.close();
+                        }, 500);
+                    <\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        });
+
+        document.getElementById('btn-gen-docx').addEventListener('click', async () => {
+            if(!validateForm()) return alert('Por favor, preencha os campos obrigatórios (em vermelho).');
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = getContractText().replace(/<br>/g, '\\n').replace(/<\/p>/g, '\\n\\n');
+            const textContent = tempDiv.innerText;
+
+            const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Contrato_${appState.draft['info-title'] || 'Documento'}.doc`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            await recordGeneration("docx_generated");
+        });
+
+        function renderContracts() {
+            const list = document.getElementById('contracts-list');
+            list.innerHTML = '';
+            appState.contracts.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'data-card';
+                
+                const isSigned = c.status === "Assinado digitalmente";
+                const badgeClass = isSigned ? "badge active" : "badge draft";
+                const badgeText = isSigned ? "✓ Assinado digitalmente" : "Não assinado";
+                
+                let signSection = '';
+                if (!isSigned) {
+                    if (appState.govbrConnected) {
+                        signSection = `
+                            <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+                                <div style="color: var(--success); font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">✓ Gov.br conectado — CPF: ***.***.***-**</div>
+                                <button class="btn-primary w-full" onclick="signContract(${c.id})">Assinar Contrato</button>
+                            </div>
+                        `;
+                    } else {
+                        signSection = `
+                            <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+                                <button style="background-color: #1351B4; color: white; border: none; border-radius: var(--radius); padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%;" onmouseover="this.style.backgroundColor='#0d3b85'" onmouseout="this.style.backgroundColor='#1351B4'" onclick="connectGovBr()">Assinar com Gov.br</button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    signSection = `
+                        <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+                            <div style="color: var(--success); font-weight: bold; margin-bottom: 10px; font-size: 0.9rem;">✓ Contrato assinado digitalmente em ${new Date().toLocaleString('pt-BR')}</div>
+                            <button class="btn-outline w-full" onclick="downloadSignedContract(${c.id})">Baixar PDF Assinado</button>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="data-card-title">${c.title}</div>
+                    <div class="data-card-subtitle">${new Date(c.created_at).toLocaleString('pt-BR')}</div>
+                    <p><strong>Contratante:</strong> ${c.contractor_data?.name || 'N/A'}</p>
+                    <p><strong>Contratada:</strong> ${c.contractee_data?.name || 'N/A'}</p>
+                    <span class="${badgeClass}">${badgeText}</span>
+                    ${signSection}
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        async function connectGovBr() {
+            try {
+                const data = await apiCall('/auth/govbr');
+                if (data.url) {
+                    window.location.href = data.url;
+                }
+            } catch (error) {
+                alert("Erro ao conectar com Gov.br");
+            }
+        }
+
+        async function signContract(contractId) {
+            try {
+                toggleLoading(true);
+                const c = appState.contracts.find(x => x.id === contractId);
+                const res = await apiCall(`/auth/govbr/contracts/${contractId}/sign`, 'POST', { contract_data: c || {} });
+                
+                if (res.status === 'success') {
+                    const cIndex = appState.contracts.findIndex(x => x.id === contractId);
+                    if (cIndex !== -1) {
+                        appState.contracts[cIndex].status = "Assinado digitalmente";
+                        appState.contracts[cIndex].signed_pdf_base64 = res.signed_pdf_base64;
+                    }
+                    alert("Contrato assinado com sucesso!");
+                    
+                    // Add history entry
+                    await apiCall('/history', 'POST', {
+                        action: 'signed',
+                        contract_id: contractId,
+                        details: { cpf: res.cpf, timestamp: new Date().toISOString() }
+                    });
+                    await loadData();
+                    renderContracts();
+                }
+            } catch (error) {
+                alert("Erro ao assinar contrato: " + error.message);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        function downloadSignedContract(contractId) {
+            const c = appState.contracts.find(x => x.id === contractId);
+            if (!c || !c.signed_pdf_base64) return alert("Documento não encontrado.");
+            
+            const byteCharacters = atob(c.signed_pdf_base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], {type: 'application/pdf'});
+            
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Contrato_Assinado_${contractId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+            appState.history.forEach(h => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = `
+                    <div class="history-header">
+                        <div>
+                            <strong>${h.action}</strong>
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">
+                                Contrato ID: ${h.contract_id || 'N/A'}
+                            </div>
+                        </div>
+                        <div class="history-time">${new Date(h.created_at).toLocaleString('pt-BR')}</div>
+                    </div>
+                    <div class="history-details">
+                        <strong>Detalhes:</strong>
+                        <div class="history-preview"><pre>${JSON.stringify(h.details, null, 2)}</pre></div>
+                    </div>
+                `;
+                item.addEventListener('click', () => item.classList.toggle('expanded'));
+                list.appendChild(item);
+            });
+        }
+
+        // --- SETTINGS ---
+        document.getElementById('set-darkmode').addEventListener('change', async (e) => {
+            appState.settings.darkMode = e.target.checked;
+            await apiCall('/users/me/settings', 'PUT', { settings: appState.settings });
+            applySettings();
+        });
+
+        document.getElementById('set-accent').addEventListener('change', async (e) => {
+            appState.settings.accentColor = e.target.value;
+            await apiCall('/users/me/settings', 'PUT', { settings: appState.settings });
+            applySettings();
+        });
+
+        document.getElementById('set-payment').addEventListener('change', async (e) => {
+            appState.settings.defaultPayment = e.target.value;
+            await apiCall('/users/me/settings', 'PUT', { settings: appState.settings });
+        });
+
+        document.getElementById('btn-update-profile').addEventListener('click', async () => {
+            const n = document.getElementById('set-name').value;
+            const e = document.getElementById('set-email').value;
+            if(n && e) {
+                try {
+                    const user = await apiCall('/users/me', 'PUT', { name: n, email: e });
+                    appState.currentUser = user;
+                    document.getElementById('sidebar-name').textContent = user.name;
+                    document.getElementById('sidebar-avatar').textContent = user.name.charAt(0).toUpperCase();
+                    alert('Perfil atualizado com sucesso.');
+                } catch(e) {}
+            }
+        });
+
+        document.getElementById('btn-clear-clients').addEventListener('click', async () => {
+            if(confirm('Tem certeza que deseja apagar todos os clientes salvos? (Isso os apagará do banco de dados)')) {
+                for (const client of appState.clients) {
+                    try { await apiCall(`/clients/${client.id}`, 'DELETE'); } catch(e) {}
+                }
+                await loadData();
+            }
+        });
+
+        document.getElementById('btn-clear-history').addEventListener('click', async () => {
+            alert('Por segurança, a exclusão em massa de histórico deve ser feita via administração.');
+        });
+
+        document.getElementById('btn-export-data').addEventListener('click', () => {
+            const dataStr = JSON.stringify(appState, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "backup_gerador_contratos.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        function bindEvents() {
+            document.querySelectorAll('input, textarea').forEach(el => {
+                el.addEventListener('focus', () => el.classList.remove('input-error'));
+            });
+        }
+    </script>
+
+</body>
+</html>

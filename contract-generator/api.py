@@ -14,6 +14,7 @@ from generators.pdf_generator import PDFGenerator
 from generators.docx_generator import DocxGenerator
 from services.cep_service import buscar_cep
 from services.cnpj_service import buscar_cnpj
+from routers import govbr
 
 app = FastAPI(title="Gerador de Contratos API")
 
@@ -24,6 +25,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(govbr.router)
 
 @app.get("/api/cep/{cep}")
 def get_cep(cep: str):

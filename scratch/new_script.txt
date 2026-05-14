@@ -1,0 +1,590 @@
+    <script>
+        const API_URL = "http://localhost:8000";
+
+        let appState = {
+            currentUser: null,
+            settings: { darkMode: true, accentColor: '#7c3aed', defaultPayment: 'Mensal' },
+            clients: [],
+            contracts: [],
+            history: [],
+            draft: {}
+        };
+
+        const setToken = (token) => localStorage.setItem('auth_token', token);
+        const getToken = () => localStorage.getItem('auth_token');
+        const clearToken = () => localStorage.removeItem('auth_token');
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const token = getToken();
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = 'Bearer ' + token;
+            }
+
+            const options = { method, headers };
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            try {
+                // Show loading could be added here
+                const res = await fetch(`${API_URL}${endpoint}`, options);
+                
+                if (res.status === 401) {
+                    clearToken();
+                    showScreen('login-screen');
+                    document.getElementById('app-layout').classList.add('hidden');
+                    throw new Error("Sessão expirada. Faça login novamente.");
+                }
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(errorData.detail || `Erro na requisição: ${res.status}`);
+                }
+                
+                if (res.status === 204) return null;
+                return await res.json();
+            } catch (error) {
+                alert(error.message);
+                throw error;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (getToken()) {
+                try {
+                    await loadUser();
+                    showMainApp();
+                } catch (e) {
+                    showScreen('login-screen');
+                }
+            } else {
+                showScreen('login-screen');
+            }
+            bindEvents();
+            updatePreview();
+        });
+
+        async function loadUser() {
+            appState.currentUser = await apiCall('/users/me');
+            appState.settings = appState.currentUser.settings || appState.settings;
+            applySettings();
+        }
+
+        async function loadData() {
+            try {
+                appState.clients = await apiCall('/clients');
+                appState.contracts = await apiCall('/contracts');
+                appState.history = await apiCall('/history');
+                renderClients();
+                renderContracts();
+                renderHistory();
+            } catch (e) {
+                console.error("Failed to load data", e);
+            }
+        }
+
+        // --- AUTH ---
+        document.getElementById('go-to-register').addEventListener('click', () => showScreen('register-screen'));
+        document.getElementById('go-to-login').addEventListener('click', () => showScreen('login-screen'));
+        
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            try {
+                const res = await apiCall('/auth/login', 'POST', { email, password });
+                setToken(res.access_token);
+                await loadUser();
+                showMainApp();
+            } catch(e) {}
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            if (password !== confirm) return alert("As senhas não coincidem");
+            
+            try {
+                const res = await apiCall('/auth/register', 'POST', { name, email, password });
+                setToken(res.access_token);
+                await loadUser();
+                showMainApp();
+            } catch(e) {}
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            clearToken();
+            appState.currentUser = null;
+            showScreen('login-screen');
+            document.getElementById('app-layout').classList.add('hidden');
+        });
+
+        // --- NAVIGATION ---
+        function showScreen(screenId) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('register-screen').classList.add('hidden');
+            if (screenId === 'login-screen' || screenId === 'register-screen') {
+                document.getElementById(screenId).classList.remove('hidden');
+            }
+        }
+
+        function showMainApp() {
+            showScreen('');
+            document.getElementById('app-layout').classList.remove('hidden');
+            
+            const name = appState.currentUser.name;
+            document.getElementById('sidebar-name').textContent = name;
+            document.getElementById('sidebar-avatar').textContent = name.charAt(0).toUpperCase();
+            
+            document.getElementById('set-name').value = name;
+            document.getElementById('set-email').value = appState.currentUser.email;
+
+            loadData();
+        }
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                
+                const target = e.currentTarget.getAttribute('data-target');
+                document.querySelectorAll('.section-container').forEach(s => s.classList.add('hidden'));
+                document.getElementById(target).classList.remove('hidden');
+                
+                if(target === 'clients-section') renderClients();
+                if(target === 'history-section') renderHistory();
+                if(target === 'contracts-section') renderContracts();
+            });
+        });
+
+        async function applySettings() {
+            const { darkMode, accentColor, defaultPayment } = appState.settings;
+            document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+            document.documentElement.style.setProperty('--accent', accentColor || '#7c3aed');
+            
+            document.getElementById('set-darkmode').checked = darkMode;
+            document.getElementById('set-accent').value = accentColor || '#7c3aed';
+            document.getElementById('set-payment').value = defaultPayment || 'Mensal';
+        }
+
+        // --- DASHBOARD FORMS & AUTOSAVE ---
+        const autoSaveInputs = document.querySelectorAll('.auto-save');
+        autoSaveInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                input.classList.remove('input-error');
+                appState.draft[input.id] = input.value;
+                updatePreview();
+            });
+        });
+
+        document.getElementById('clear-form-btn').addEventListener('click', () => {
+            if(confirm('Limpar todos os campos?')) {
+                autoSaveInputs.forEach(input => input.value = '');
+                appState.draft = {};
+                updatePreview();
+            }
+        });
+
+        // --- VIACEP INTEGRATION ---
+        async function fetchViaCEP(cepStr) {
+            const cep = cepStr.replace(/\D/g, '');
+            if (cep.length !== 8) return null;
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const data = await response.json();
+                if (data.erro) {
+                    alert('CEP não encontrado.');
+                    return null;
+                }
+                return data;
+            } catch (error) {
+                alert('Erro ao buscar o CEP.');
+                return null;
+            }
+        }
+
+        async function searchViaCEP(prefix) {
+            const zipInput = document.getElementById(`${prefix}-zip`);
+            const data = await fetchViaCEP(zipInput.value);
+            if (data) {
+                document.getElementById(`${prefix}-address`).value = data.logradouro;
+                document.getElementById(`${prefix}-neigh`).value = data.bairro;
+                document.getElementById(`${prefix}-city`).value = `${data.localidade} / ${data.uf}`;
+                
+                ['address', 'neigh', 'city'].forEach(f => {
+                    appState.draft[`${prefix}-${f}`] = document.getElementById(`${prefix}-${f}`).value;
+                });
+                updatePreview();
+                document.getElementById(`${prefix}-number`).focus();
+            }
+        }
+
+        async function searchViaCEPModal(zipValue) {
+            const data = await fetchViaCEP(zipValue);
+            if (data) {
+                document.getElementById('mc-address').value = data.logradouro;
+                document.getElementById('mc-neigh').value = data.bairro;
+                document.getElementById('mc-city').value = `${data.localidade} / ${data.uf}`;
+                document.getElementById('mc-number').focus();
+            }
+        }
+
+        document.getElementById('tor-zip').addEventListener('blur', (e) => searchViaCEP('tor'));
+        document.getElementById('tee-zip').addEventListener('blur', (e) => searchViaCEP('tee'));
+
+        function searchClient(inputId, prefix) {
+            const doc = document.getElementById(inputId).value;
+            const client = appState.clients.find(c => c.document === doc || c.doc === doc); // Handle new or old format
+            if (client) {
+                fillFormWithClient(client, prefix);
+            } else {
+                alert('Cliente não encontrado nos registros salvos.');
+            }
+        }
+
+        // --- CLIENTS ---
+        document.getElementById('btn-add-client').addEventListener('click', () => {
+            document.getElementById('client-form').reset();
+            document.getElementById('client-modal').classList.remove('hidden');
+        });
+
+        function closeModal() { document.getElementById('client-modal').classList.add('hidden'); }
+
+        document.getElementById('client-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const clientData = {
+                name: document.getElementById('mc-name').value,
+                document: document.getElementById('mc-doc').value,
+                email: document.getElementById('mc-email').value,
+                zip_code: document.getElementById('mc-zip').value,
+                address: document.getElementById('mc-address').value,
+                number: document.getElementById('mc-number').value,
+                complement: document.getElementById('mc-comp').value,
+                neighborhood: document.getElementById('mc-neigh').value,
+                city_state: document.getElementById('mc-city').value
+            };
+            try {
+                const newClient = await apiCall('/clients', 'POST', clientData);
+                appState.clients.push(newClient);
+                closeModal();
+                renderClients();
+            } catch(e) {}
+        });
+
+        function renderClients() {
+            const list = document.getElementById('clients-list');
+            list.innerHTML = '';
+            appState.clients.forEach(c => {
+                const docValue = c.document || c.doc || '';
+                const zipValue = c.zip_code || c.zip || '';
+                const compValue = c.complement || c.comp || '';
+                const neighValue = c.neighborhood || c.neigh || '';
+                const cityValue = c.city_state || c.city || '';
+                
+                const clientForForm = {
+                    name: c.name, doc: docValue, email: c.email, zip: zipValue,
+                    address: c.address, number: c.number, comp: compValue, neigh: neighValue, city: cityValue
+                };
+                
+                const card = document.createElement('div');
+                card.className = 'data-card';
+                card.innerHTML = `
+                    <div class="data-card-title">${c.name}</div>
+                    <div class="data-card-subtitle">${docValue} | ${c.email || ''}</div>
+                    <p style="font-size:0.85rem; margin-bottom:0;">${c.address || ''}, ${c.number || ''} - ${cityValue}</p>
+                    <div class="client-actions">
+                        <button class="btn-outline btn-small" onclick='fillFormWithClient(${JSON.stringify(clientForForm).replace(/'/g, "\\'")}, "tor")'>Usar como Contratante</button>
+                        <button class="btn-outline btn-small" onclick='fillFormWithClient(${JSON.stringify(clientForForm).replace(/'/g, "\\'")}, "tee")'>Usar como Contratada</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        window.fillFormWithClient = function(client, prefix) {
+            document.getElementById(`${prefix}-name`).value = client.name || '';
+            document.getElementById(`${prefix}-doc`).value = client.doc || '';
+            document.getElementById(`${prefix}-email`).value = client.email || '';
+            document.getElementById(`${prefix}-zip`).value = client.zip || '';
+            document.getElementById(`${prefix}-address`).value = client.address || '';
+            document.getElementById(`${prefix}-number`).value = client.number || '';
+            document.getElementById(`${prefix}-comp`).value = client.comp || '';
+            document.getElementById(`${prefix}-neigh`).value = client.neigh || '';
+            document.getElementById(`${prefix}-city`).value = client.city || '';
+            
+            ['name', 'doc', 'email', 'zip', 'address', 'number', 'comp', 'neigh', 'city'].forEach(f => {
+                appState.draft[`${prefix}-${f}`] = client[f] || '';
+            });
+            
+            document.querySelector('.nav-item[data-target="dashboard-section"]').click();
+            updatePreview();
+        }
+
+        // --- PREVIEW & GENERATION ---
+        function getContractText() {
+            const d = appState.draft;
+            const title = d['info-title'] || 'CONTRATO DE PRESTAÇÃO DE SERVIÇOS';
+            const torName = d['tor-name'] || '[NOME DO CONTRATANTE]';
+            const torDoc = d['tor-doc'] || '[CPF/CNPJ]';
+            const teeName = d['tee-name'] || '[NOME DA CONTRATADA]';
+            const teeDoc = d['tee-doc'] || '[CPF/CNPJ]';
+            const val = d['info-value'] || '[VALOR]';
+            const start = d['info-start'] || '[DATA]';
+            const payment = d['info-payment'] || 'Mensal';
+            const desc = d['info-desc'] || '[DESCRIÇÃO DOS SERVIÇOS]';
+            const clauses = d['info-clauses'] || '';
+
+            const dateStr = new Date().toLocaleDateString('pt-BR');
+
+            return \`
+<h2 style="text-align:center; text-transform:uppercase; margin-bottom: 2rem;">\${title}</h2>
+
+<p><strong>1. DAS PARTES</strong></p>
+<p><strong>CONTRATANTE:</strong> \${torName}, inscrito(a) sob o documento \${torDoc}, residente e domiciliado(a) em \${d['tor-address'] || ''}, \${d['tor-number'] || ''}, \${d['tor-city'] || ''}, doravante denominado(a) CONTRATANTE.</p>
+<p><strong>CONTRATADA:</strong> \${teeName}, inscrito(a) sob o documento \${teeDoc}, com sede em \${d['tee-address'] || ''}, \${d['tee-number'] || ''}, \${d['tee-city'] || ''}, doravante denominado(a) CONTRATADA.</p>
+
+<p><strong>2. DO OBJETO DO CONTRATO</strong></p>
+<p>A CONTRATADA compromete-se a fornecer os seguintes serviços à CONTRATANTE: \${desc}.</p>
+
+<p><strong>3. DO PAGAMENTO E PRAZOS</strong></p>
+<p>O valor total deste contrato é de \${val}. O pagamento será realizado da seguinte forma: \${payment}.</p>
+<p>Os serviços terão início em \${start.split('-').reverse().join('/')} e término previsto para \${d['info-end'] ? d['info-end'].split('-').reverse().join('/') : '[DATA DE TÉRMINO]'}.</p>
+
+\${clauses ? \`<p><strong>4. CLÁUSULAS ADICIONAIS</strong></p><p>\${clauses.replace(/\\n/g, '<br>')}</p>\` : ''}
+
+<p style="margin-top:3rem;">E, por estarem de acordo, as partes assinam o presente contrato.</p>
+
+<div style="display:flex; justify-content:space-between; margin-top: 4rem;">
+    <div style="text-align:center; width: 45%;">
+        <hr style="border:0; border-bottom:1px solid #000; margin-bottom:10px;">
+        <p>\${torName}<br>CONTRATANTE</p>
+    </div>
+    <div style="text-align:center; width: 45%;">
+        <hr style="border:0; border-bottom:1px solid #000; margin-bottom:10px;">
+        <p>\${teeName}<br>CONTRATADA</p>
+    </div>
+</div>
+<p style="text-align:center; margin-top:2rem;">Documento gerado em: \${dateStr}</p>
+            \`;
+        }
+
+        function updatePreview() {
+            document.getElementById('live-preview').innerHTML = getContractText();
+        }
+
+        function validateForm() {
+            let valid = true;
+            document.querySelectorAll('.required').forEach(el => {
+                if(!el.value.trim()) {
+                    el.classList.add('input-error');
+                    valid = false;
+                }
+            });
+            return valid;
+        }
+
+        async function recordGeneration(actionType = "created") {
+            const d = appState.draft;
+            const contractData = {
+                title: d['info-title'] || 'Contrato',
+                status: 'Ativo',
+                contractor_data: {
+                    name: d['tor-name'], doc: d['tor-doc'], email: d['tor-email'],
+                    address: d['tor-address'], number: d['tor-number'], city: d['tor-city']
+                },
+                contractee_data: {
+                    name: d['tee-name'], doc: d['tee-doc'], email: d['tee-email'],
+                    address: d['tee-address'], number: d['tee-number'], city: d['tee-city']
+                },
+                contract_info: {
+                    value: d['info-value'], start: d['info-start'], end: d['info-end'],
+                    payment: d['info-payment'], desc: d['info-desc'], clauses: d['info-clauses']
+                }
+            };
+            try {
+                const newContract = await apiCall('/contracts', 'POST', contractData);
+                appState.contracts.push(newContract);
+                
+                // History is automatically created by backend for 'created'
+                if (actionType !== "created") {
+                    await apiCall('/history', 'POST', {
+                        action: actionType,
+                        contract_id: newContract.id,
+                        details: { generated_doc: true }
+                    });
+                }
+                
+                await loadData(); // Reload to get updated history
+            } catch (e) {
+                console.error("Error recording contract", e);
+            }
+        }
+
+        document.getElementById('btn-gen-pdf').addEventListener('click', async () => {
+            if(!validateForm()) return alert('Por favor, preencha os campos obrigatórios (em vermelho).');
+            
+            const contractHTML = getContractText();
+            await recordGeneration("pdf_generated");
+            
+            const printWindow = window.open('', '_blank', 'width=800,height=900');
+            if(!printWindow) return alert('Por favor, permita pop-ups para imprimir o PDF.');
+            
+            printWindow.document.write(\`
+                <html>
+                <head>
+                    <title>Impressão do Contrato</title>
+                    <style>
+                        @page { size: A4; margin: 2cm; }
+                        body { 
+                            font-family: 'Times New Roman', Times, serif; 
+                            font-size: 12pt; 
+                            line-height: 1.5; 
+                            color: #000; 
+                            background: #fff;
+                        }
+                    </style>
+                </head>
+                <body>
+                    \${contractHTML}
+                    <script>
+                        setTimeout(() => {
+                            window.print();
+                            window.close();
+                        }, 500);
+                    <\\/script>
+                </body>
+                </html>
+            \`);
+            printWindow.document.close();
+        });
+
+        document.getElementById('btn-gen-docx').addEventListener('click', async () => {
+            if(!validateForm()) return alert('Por favor, preencha os campos obrigatórios (em vermelho).');
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = getContractText().replace(/<br>/g, '\\n').replace(/<\\/p>/g, '\\n\\n');
+            const textContent = tempDiv.innerText;
+
+            const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = \`Contrato_\${appState.draft['info-title'] || 'Documento'}.doc\`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            await recordGeneration("docx_generated");
+        });
+
+        function renderContracts() {
+            const list = document.getElementById('contracts-list');
+            list.innerHTML = '';
+            appState.contracts.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'data-card';
+                card.innerHTML = \`
+                    <div class="data-card-title">\${c.title}</div>
+                    <div class="data-card-subtitle">\${new Date(c.created_at).toLocaleString('pt-BR')}</div>
+                    <p><strong>Contratante:</strong> \${c.contractor_data?.name || 'N/A'}</p>
+                    <p><strong>Contratada:</strong> \${c.contractee_data?.name || 'N/A'}</p>
+                    <span class="badge active">\${c.status}</span>
+                \`;
+                list.appendChild(card);
+            });
+        }
+
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            list.innerHTML = '';
+            appState.history.forEach(h => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                item.innerHTML = \`
+                    <div class="history-header">
+                        <div>
+                            <strong>\${h.action}</strong>
+                            <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">
+                                Contrato ID: \${h.contract_id || 'N/A'}
+                            </div>
+                        </div>
+                        <div class="history-time">\${new Date(h.created_at).toLocaleString('pt-BR')}</div>
+                    </div>
+                    <div class="history-details">
+                        <strong>Detalhes:</strong>
+                        <div class="history-preview"><pre>\${JSON.stringify(h.details, null, 2)}</pre></div>
+                    </div>
+                \`;
+                item.addEventListener('click', () => item.classList.toggle('expanded'));
+                list.appendChild(item);
+            });
+        }
+
+        // --- SETTINGS ---
+        document.getElementById('set-darkmode').addEventListener('change', async (e) => {
+            appState.settings.darkMode = e.target.checked;
+            await apiCall('/users/me/settings', 'PUT', { settings: appState.settings });
+            applySettings();
+        });
+
+        document.getElementById('set-accent').addEventListener('change', async (e) => {
+            appState.settings.accentColor = e.target.value;
+            await apiCall('/users/me/settings', 'PUT', { settings: appState.settings });
+            applySettings();
+        });
+
+        document.getElementById('set-payment').addEventListener('change', async (e) => {
+            appState.settings.defaultPayment = e.target.value;
+            await apiCall('/users/me/settings', 'PUT', { settings: appState.settings });
+        });
+
+        document.getElementById('btn-update-profile').addEventListener('click', async () => {
+            const n = document.getElementById('set-name').value;
+            const e = document.getElementById('set-email').value;
+            if(n && e) {
+                try {
+                    const user = await apiCall('/users/me', 'PUT', { name: n, email: e });
+                    appState.currentUser = user;
+                    document.getElementById('sidebar-name').textContent = user.name;
+                    document.getElementById('sidebar-avatar').textContent = user.name.charAt(0).toUpperCase();
+                    alert('Perfil atualizado com sucesso.');
+                } catch(e) {}
+            }
+        });
+
+        document.getElementById('btn-clear-clients').addEventListener('click', async () => {
+            if(confirm('Tem certeza que deseja apagar todos os clientes salvos? (Isso os apagará do banco de dados)')) {
+                for (const client of appState.clients) {
+                    try { await apiCall(\`/clients/\${client.id}\`, 'DELETE'); } catch(e) {}
+                }
+                await loadData();
+            }
+        });
+
+        document.getElementById('btn-clear-history').addEventListener('click', async () => {
+            alert('Por segurança, a exclusão em massa de histórico deve ser feita via administração.');
+        });
+
+        document.getElementById('btn-export-data').addEventListener('click', () => {
+            const dataStr = JSON.stringify(appState, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "backup_gerador_contratos.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        function bindEvents() {
+            document.querySelectorAll('input, textarea').forEach(el => {
+                el.addEventListener('focus', () => el.classList.remove('input-error'));
+            });
+        }
+    </script>
