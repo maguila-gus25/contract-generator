@@ -3,7 +3,10 @@ from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
 from .. import models, schemas, auth, database
-
+from fastapi.responses import FileResponse
+import tempfile
+import os
+from ..services import document_generator
 router = APIRouter(
     prefix="/contracts",
     tags=["contracts"]
@@ -88,3 +91,29 @@ def delete_contract(contract_id: UUID, current_user: models.User = Depends(auth.
     db.delete(db_contract)
     db.commit()
     return None
+
+@router.get("/{contract_id}/download/pdf")
+def download_contract_pdf(contract_id: UUID, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    db_contract = db.query(models.Contract).filter(models.Contract.id == contract_id, models.Contract.user_id == current_user.id).first()
+    if not db_contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        file_path = tmp.name
+    
+    document_generator.generate_pdf(db_contract, file_path)
+    
+    return FileResponse(path=file_path, filename=f"Contrato_{db_contract.title or 'Gerado'}.pdf", media_type="application/pdf")
+
+@router.get("/{contract_id}/download/docx")
+def download_contract_docx(contract_id: UUID, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    db_contract = db.query(models.Contract).filter(models.Contract.id == contract_id, models.Contract.user_id == current_user.id).first()
+    if not db_contract:
+        raise HTTPException(status_code=404, detail="Contract not found")
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+        file_path = tmp.name
+    
+    document_generator.generate_docx(db_contract, file_path)
+    
+    return FileResponse(path=file_path, filename=f"Contrato_{db_contract.title or 'Gerado'}.docx", media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")

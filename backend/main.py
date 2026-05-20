@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 
 from . import models, schemas, auth, database
-from .routers import users, clients, contracts, history
+from .routers import users, clients, contracts, history, integrations
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -23,6 +23,7 @@ app.include_router(users.router)
 app.include_router(clients.router)
 app.include_router(contracts.router)
 app.include_router(history.router)
+app.include_router(integrations.router)
 
 @app.post("/auth/register", response_model=schemas.Token)
 def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):

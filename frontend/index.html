@@ -824,15 +824,9 @@
             const cep = cepStr.replace(/\D/g, '');
             if (cep.length !== 8) return null;
             try {
-                const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                const data = await response.json();
-                if (data.erro) {
-                    alert('CEP não encontrado.');
-                    return null;
-                }
+                const data = await apiCall(`/integrations/cep/${cep}`);
                 return data;
             } catch (error) {
-                alert('Erro ao buscar o CEP.');
                 return null;
             }
         }
@@ -866,14 +860,40 @@
         document.getElementById('tor-zip').addEventListener('blur', (e) => searchViaCEP('tor'));
         document.getElementById('tee-zip').addEventListener('blur', (e) => searchViaCEP('tee'));
 
-        function searchClient(inputId, prefix) {
-            const doc = document.getElementById(inputId).value;
-            const client = appState.clients.find(c => c.document === doc || c.doc === doc); // Handle new or old format
+        async function searchClient(inputId, prefix) {
+            const doc = document.getElementById(inputId).value.replace(/\D/g, '');
+            
+            const client = appState.clients.find(c => {
+                const cDoc = (c.document || c.doc || '').replace(/\D/g, '');
+                return cDoc === doc;
+            });
+            
             if (client) {
                 fillFormWithClient(client, prefix);
-            } else {
-                alert('Cliente não encontrado nos registros salvos.');
+                return;
             }
+            
+            if (doc.length === 14) {
+                try {
+                    const data = await apiCall(`/integrations/cnpj/${doc}`);
+                    const newClientData = {
+                        name: data.razao_social || data.nome_fantasia,
+                        doc: doc,
+                        zip: data.cep,
+                        address: data.logradouro,
+                        number: data.numero,
+                        comp: data.complemento,
+                        neigh: data.bairro,
+                        city: `${data.cidade} / ${data.estado}`
+                    };
+                    fillFormWithClient(newClientData, prefix);
+                    return;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            
+            alert('Cliente não encontrado nos registros salvos e não foi possível buscar na Receita.');
         }
 
         // --- CLIENTS ---
@@ -1017,29 +1037,38 @@ ${clauses ? `<p><strong>4. CLÁUSULAS ADICIONAIS</strong></p><p>${clauses.replac
             return valid;
         }
 
-        async function recordGeneration(actionType = "created") {
+        async function recordGenerationBackend(actionType = "created") {
             const d = appState.draft;
+            
+            let clauses = [];
+            if (d['info-clauses']) {
+                clauses = d['info-clauses'].split('\\n').map((c, i) => ({ title: `CLÁUSULA ${i+1}`, content: c }));
+            }
+            
+            let valStr = d['info-value'] || "0";
+            valStr = valStr.replace(/[^\\d.,]/g, '').replace(',', '.');
+            let valNum = parseFloat(valStr) || 0;
+
             const contractData = {
                 title: d['info-title'] || 'Contrato',
                 status: 'Ativo',
                 contractor_data: {
-                    name: d['tor-name'], doc: d['tor-doc'], email: d['tor-email'],
-                    address: d['tor-address'], number: d['tor-number'], city: d['tor-city']
+                    name: d['tor-name'], document: d['tor-doc'], email: d['tor-email'],
+                    address: d['tor-address'], number: d['tor-number'], city_state: d['tor-city']
                 },
                 contractee_data: {
-                    name: d['tee-name'], doc: d['tee-doc'], email: d['tee-email'],
-                    address: d['tee-address'], number: d['tee-number'], city: d['tee-city']
+                    name: d['tee-name'], document: d['tee-doc'], email: d['tee-email'],
+                    address: d['tee-address'], number: d['tee-number'], city_state: d['tee-city']
                 },
                 contract_info: {
-                    value: d['info-value'], start: d['info-start'], end: d['info-end'],
-                    payment: d['info-payment'], desc: d['info-desc'], clauses: d['info-clauses']
+                    value: valNum, currency: 'R$', start: d['info-start'], end: d['info-end'],
+                    payment_method: d['info-payment'], desc: d['info-desc'], clauses: clauses
                 }
             };
             try {
                 const newContract = await apiCall('/contracts', 'POST', contractData);
                 appState.contracts.push(newContract);
                 
-                // History is automatically created by backend for 'created'
                 if (actionType !== "created") {
                     await apiCall('/history', 'POST', {
                         action: actionType,
@@ -1048,68 +1077,58 @@ ${clauses ? `<p><strong>4. CLÁUSULAS ADICIONAIS</strong></p><p>${clauses.replac
                     });
                 }
                 
-                await loadData(); // Reload to get updated history
+                await loadData();
+                return newContract.id;
             } catch (e) {
                 console.error("Error recording contract", e);
+                throw e;
             }
         }
 
-        document.getElementById('btn-gen-pdf').addEventListener('click', async () => {
-            if(!validateForm()) return alert('Por favor, preencha os campos obrigatórios (em vermelho).');
-            
-            const contractHTML = getContractText();
-            await recordGeneration("pdf_generated");
-            
-            const printWindow = window.open('', '_blank', 'width=800,height=900');
-            if(!printWindow) return alert('Por favor, permita pop-ups para imprimir o PDF.');
-            
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Impressão do Contrato</title>
-                    <style>
-                        @page { size: A4; margin: 2cm; }
-                        body { 
-                            font-family: 'Times New Roman', Times, serif; 
-                            font-size: 12pt; 
-                            line-height: 1.5; 
-                            color: #000; 
-                            background: #fff;
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${contractHTML}
-                    <script>
-                        setTimeout(() => {
-                            window.print();
-                            window.close();
-                        }, 500);
-                    <\/script>
-                </body>
-                </html>
-            `);
-            printWindow.document.close();
-        });
-
-        document.getElementById('btn-gen-docx').addEventListener('click', async () => {
-            if(!validateForm()) return alert('Por favor, preencha os campos obrigatórios (em vermelho).');
-            
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = getContractText().replace(/<br>/g, '\\n').replace(/<\/p>/g, '\\n\\n');
-            const textContent = tempDiv.innerText;
-
-            const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
+        async function downloadBackendFile(contractId, type) {
+            const token = getToken();
+            const res = await fetch(`${API_URL}/contracts/${contractId}/download/${type}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || "Erro ao gerar o arquivo no servidor.");
+            }
+            const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Contrato_${appState.draft['info-title'] || 'Documento'}.doc`;
+            a.download = `Contrato_${contractId}.${type}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
-            await recordGeneration("docx_generated");
+        }
+
+        document.getElementById('btn-gen-pdf').addEventListener('click', async () => {
+            if(!validateForm()) return alert('Por favor, preencha os campos obrigatórios (em vermelho).');
+            try {
+                toggleLoading(true);
+                const contractId = await recordGenerationBackend("pdf_generated");
+                await downloadBackendFile(contractId, 'pdf');
+            } catch (e) {
+                alert('Erro ao gerar PDF: ' + e.message);
+            } finally {
+                toggleLoading(false);
+            }
+        });
+
+        document.getElementById('btn-gen-docx').addEventListener('click', async () => {
+            if(!validateForm()) return alert('Por favor, preencha os campos obrigatórios (em vermelho).');
+            try {
+                toggleLoading(true);
+                const contractId = await recordGenerationBackend("docx_generated");
+                await downloadBackendFile(contractId, 'docx');
+            } catch (e) {
+                alert('Erro ao gerar DOCX: ' + e.message);
+            } finally {
+                toggleLoading(false);
+            }
         });
 
         function renderContracts() {
