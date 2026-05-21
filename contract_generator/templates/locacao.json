@@ -1,0 +1,62 @@
+[
+  {
+    "numero": 1,
+    "titulo": "DO OBJETO",
+    "conteudo": "O LOCADOR cede ao LOCATÁRIO, para fins exclusivamente residenciais, o imóvel localizado em {descricao_servico}. O imóvel é composto conforme descrito no laudo de vistoria que integra este contrato como Anexo I.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 2,
+    "titulo": "DO PRAZO DA LOCAÇÃO",
+    "conteudo": "A locação terá prazo determinado de {data_inicio} a {data_fim}. Findo o prazo, o LOCATÁRIO deverá desocupar e devolver o imóvel nas mesmas condições em que o recebeu, salvo o desgaste natural pelo uso. A não desocupação espontânea implicará em locação por prazo indeterminado.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 3,
+    "titulo": "DO VALOR DO ALUGUEL",
+    "conteudo": "O valor mensal do aluguel é de {valor}, a ser pago na forma: {forma_pagamento}. O não pagamento no prazo acarretará multa de 10% sobre o valor do aluguel, acrescida de juros de mora de 1% ao mês e correção monetária pelo IGPM.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 4,
+    "titulo": "DO REAJUSTE",
+    "conteudo": "O valor do aluguel será reajustado anualmente com base na variação acumulada do IGPM (Índice Geral de Preços do Mercado) ou, na sua ausência, pelo índice legalmente substituto. O reajuste será aplicado automaticamente na data de aniversário do contrato.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 5,
+    "titulo": "DAS OBRIGAÇÕES DO LOCADOR",
+    "conteudo": "O LOCADOR se obriga a: (a) entregar o imóvel em perfeitas condições de uso e habitabilidade; (b) garantir ao LOCATÁRIO o uso pacífico do imóvel durante toda a vigência do contrato; (c) realizar reparos estruturais e nas instalações quando necessário; (d) pagar os impostos incidentes sobre o imóvel (IPTU), salvo ajuste em contrário.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 6,
+    "titulo": "DAS OBRIGAÇÕES DO LOCATÁRIO",
+    "conteudo": "O LOCATÁRIO se obriga a: (a) pagar o aluguel e encargos pontualmente; (b) utilizar o imóvel conforme sua finalidade, zelando por sua conservação; (c) não realizar obras ou modificações sem prévia autorização por escrito do LOCADOR; (d) arcar com as despesas de consumo de água, luz, gás e condomínio; (e) permitir vistorias agendadas pelo LOCADOR com aviso de 24 horas.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 7,
+    "titulo": "DA VISTORIA",
+    "conteudo": "Na entrega do imóvel será realizada vistoria detalhada, documentada em laudo com fotos, assinado por ambas as partes. Na devolução, nova vistoria será realizada e eventuais danos causados pelo LOCATÁRIO serão descontados da caução ou cobrados separadamente.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 8,
+    "titulo": "DAS BENFEITORIAS",
+    "conteudo": "As benfeitorias necessárias realizadas pelo LOCATÁRIO serão indenizadas pelo LOCADOR. As benfeitorias úteis e voluptuárias realizadas sem autorização não serão indenizadas e poderão ser retiradas pelo LOCATÁRIO ao término do contrato, desde que não causem danos ao imóvel.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 9,
+    "titulo": "DA RESCISÃO ANTECIPADA",
+    "conteudo": "Em caso de rescisão antecipada pelo LOCATÁRIO, será devida multa proporcional ao período restante do contrato, calculada sobre o valor total dos aluguéis remanescentes, respeitado o disposto no art. 4º da Lei 8.245/91.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 10,
+    "titulo": "DO FORO",
+    "conteudo": "Fica eleito o foro da Comarca onde se localiza o imóvel para dirimir as questões oriundas deste contrato, com renúncia a qualquer outro por mais privilegiado que seja.",
+    "obrigatoria": true
+  }
+]
