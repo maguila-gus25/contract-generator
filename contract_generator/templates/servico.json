@@ -1,0 +1,44 @@
+[
+  {
+    "numero": 1,
+    "titulo": "DO OBJETO",
+    "conteudo": "O CONTRATADO se compromete a prestar ao CONTRATANTE os seguintes serviços: {descricao_servico}. Os serviços serão executados com toda a diligência e competência técnica necessárias, obedecendo às normas e padrões aplicáveis.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 2,
+    "titulo": "DO VALOR E FORMA DE PAGAMENTO",
+    "conteudo": "Pela prestação dos serviços descritos neste contrato, o CONTRATANTE pagará ao CONTRATADO o valor total de {valor}, na forma de pagamento: {forma_pagamento}. O pagamento deverá ser efetuado mediante transferência bancária, boleto ou outra forma previamente acordada entre as partes.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 3,
+    "titulo": "DO PRAZO",
+    "conteudo": "O presente contrato terá vigência de {data_inicio} a {data_fim}, podendo ser prorrogado mediante acordo escrito entre as partes com antecedência mínima de 30 (trinta) dias antes do término.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 4,
+    "titulo": "DAS OBRIGAÇÕES DO CONTRATADO",
+    "conteudo": "O CONTRATADO se obriga a: (a) executar os serviços contratados com qualidade e dentro dos prazos acordados; (b) manter sigilo sobre todas as informações confidenciais do CONTRATANTE; (c) comunicar imediatamente qualquer impedimento ou dificuldade que possa afetar o cumprimento do contrato; (d) não subcontratar os serviços sem anuência prévia e por escrito do CONTRATANTE.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 5,
+    "titulo": "DAS OBRIGAÇÕES DO CONTRATANTE",
+    "conteudo": "O CONTRATANTE se obriga a: (a) efetuar os pagamentos nas datas e condições acordadas; (b) fornecer ao CONTRATADO todas as informações, materiais e acessos necessários para a execução dos serviços; (c) comunicar formalmente ao CONTRATADO eventuais insatisfações com a qualidade dos serviços, concedendo prazo razoável para correções.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 6,
+    "titulo": "DA RESCISÃO",
+    "conteudo": "O presente contrato poderá ser rescindido: (a) por mútuo acordo entre as partes, por escrito; (b) por descumprimento de qualquer cláusula ou condição por qualquer das partes, mediante notificação escrita com prazo de 15 (quinze) dias para regularização; (c) automaticamente, em caso de falência, insolvência ou dissolução de qualquer das partes. Em caso de rescisão imotivada pelo CONTRATANTE, será devida multa de 20% sobre o valor remanescente do contrato.",
+    "obrigatoria": true
+  },
+  {
+    "numero": 7,
+    "titulo": "DO FORO",
+    "conteudo": "Fica eleito o foro da Comarca de {contratante_endereco}, com renúncia de qualquer outro por mais privilegiado que seja, para dirimir as controvérsias oriundas do presente contrato.",
+    "obrigatoria": true
+  }
+]

@@ -1,11 +1,45 @@
-.env
-__pycache__/
-*.pyc
-*.pyo
-.venv/
+# .gitignore
+# ------------------------------------------------------------
+# O que desenvolver aqui:
+#   Este arquivo diz ao Git quais arquivos IGNORAR — ou seja,
+#   nunca versionar, nunca commitar, nunca enviar ao GitHub.
+#
+#   Regra geral: ignore tudo que:
+#     1. É gerado automaticamente (pode ser recriado)
+#     2. É específico da sua máquina (outros devs têm o deles)
+#     3. Contém informações sensíveis (senhas, tokens de API)
+# ------------------------------------------------------------
+
+# Ambiente virtual Python (cada dev cria o seu)
 venv/
-*.egg-info/
+.venv/
+env/
+
+# Cache do Python (gerado automaticamente ao rodar o código)
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Arquivos gerados pelo projeto (não versionar contratos gerados)
+output/
+
+# Relatórios de cobertura de testes
+.coverage
+htmlcov/
+
+# Configurações de editores (específicas de cada desenvolvedor)
+.vscode/
+.idea/
+*.swp
+
+# Banco de dados SQLite
+instance/
+*.db
+
+# Variáveis de ambiente e segredos
+.env
+*.env
+
+# Arquivos de sistema operacional
 .DS_Store
-node_modules/
-*.log
-postgres_data/
+Thumbs.db

@@ -1,0 +1,28 @@
+# requirements-dev.txt
+# ------------------------------------------------------------
+# DEPENDÊNCIAS DE DESENVOLVIMENTO
+#
+# Estas bibliotecas são usadas apenas durante o desenvolvimento:
+# testes, formatação de código, análise de qualidade.
+# NÃO precisam estar instaladas em produção.
+#
+#   Como instalar:
+#     pip install -r requirements-dev.txt
+#
+# O que cada uma faz:
+#   pytest==8.2.2         → framework de testes (substitui unittest com sintaxe mais limpa)
+#   pytest-cov==5.0.0     → mede cobertura de testes (% do código coberto por testes)
+#                           Use: pytest --cov=contract_generator tests/
+#   black==24.4.2         → formatador automático de código (opinativo, sem configuração)
+#                           Use: black .
+#   flake8==7.1.0         → linter: aponta erros de estilo e problemas de código
+#                           Use: flake8 contract_generator/
+#   mypy==1.10.0          → verificador de tipos (checa se os type hints fazem sentido)
+#                           Use: mypy contract_generator/
+# ------------------------------------------------------------
+
+pytest==8.2.2
+pytest-cov==5.0.0
+black==24.4.2
+flake8==7.1.0
+mypy==1.10.0

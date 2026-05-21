@@ -1,0 +1,52 @@
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8f9fa;
+}
+
+main {
+  flex: 1;
+}
+
+.navbar-brand {
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.card {
+  border-radius: 12px;
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-header {
+  border-radius: 12px 12px 0 0 !important;
+  padding: 0.75rem 1.25rem;
+}
+
+.btn {
+  border-radius: 8px;
+}
+
+.badge {
+  border-radius: 6px;
+  padding: 0.35em 0.65em;
+}
+
+.bg-primary-subtle {
+  background-color: #dbeafe;
+}
+
+.text-primary {
+  color: #1d4ed8 !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
