@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 .claude/skills/ui-ux-pro-max/scripts/search.py*)",
+      "Bash(python3 .claude/skills/design-system/scripts/*)",
+      "Bash(python3 .claude/skills/design/scripts/*)",
+      "Bash(python3 .claude/skills/ui-styling/scripts/*)",
+      "Bash(pytest*)",
+      "Bash(pip install*)",
+      "Bash(uvicorn*)",
+      "Bash(docker-compose*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ],
+    "deny": []
+  }
+}
