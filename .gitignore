@@ -43,3 +43,5 @@ instance/
 # Arquivos de sistema operacional
 .DS_Store
 Thumbs.db
+# Fonts are local-only — not committed
+.claude/skills/ui-styling/canvas-fonts/*.ttf
