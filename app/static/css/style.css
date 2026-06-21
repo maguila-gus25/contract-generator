@@ -1,52 +1,229 @@
+/* ============================================================
+   Contract Generator — "Trust & Authority" design system
+   Navy + gold palette, EB Garamond (headings) + Lato (body).
+   Built on top of Bootstrap 5.3 via CSS variable overrides.
+   ============================================================ */
+
+:root {
+  /* Brand palette */
+  --color-primary: #1E3A8A;
+  --color-primary-dark: #172e6e;
+  --color-secondary: #1E40AF;
+  --color-accent: #B45309;       /* gold / CTA */
+  --color-accent-dark: #92400e;
+  --color-background: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-foreground: #0F172A;
+  --color-muted: #E9EEF5;
+  --color-muted-text: #64748B;
+  --color-border: #CBD5E1;
+  --color-success: #15803D;
+  --color-destructive: #DC2626;
+
+  /* Typography */
+  --font-heading: "EB Garamond", Georgia, "Times New Roman", serif;
+  --font-body: "Lato", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Map Bootstrap theme tokens onto the brand palette */
+  --bs-primary: var(--color-primary);
+  --bs-primary-rgb: 30, 58, 138;
+  --bs-link-color: var(--color-secondary);
+  --bs-link-color-rgb: 30, 64, 175;
+  --bs-link-hover-color: var(--color-primary-dark);
+  --bs-body-color: var(--color-foreground);
+  --bs-body-bg: var(--color-background);
+  --bs-border-color: var(--color-border);
+}
+
+/* ---------- Base layout ---------- */
 body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f8f9fa;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 main {
   flex: 1;
 }
 
+h1, h2, h3, h4, h5, h6,
 .navbar-brand {
-  font-size: 1.1rem;
-  letter-spacing: 0.02em;
+  font-family: var(--font-heading);
+  letter-spacing: 0.01em;
 }
 
+/* ---------- Navbar ---------- */
+.navbar.bg-primary {
+  background-color: var(--color-primary) !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+.navbar-brand {
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+              color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--color-primary);
+  --bs-btn-border-color: var(--color-primary);
+  --bs-btn-hover-bg: var(--color-primary-dark);
+  --bs-btn-hover-border-color: var(--color-primary-dark);
+  --bs-btn-active-bg: var(--color-primary-dark);
+  --bs-btn-active-border-color: var(--color-primary-dark);
+  --bs-btn-disabled-bg: var(--color-primary);
+  --bs-btn-disabled-border-color: var(--color-primary);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--color-primary);
+  --bs-btn-border-color: var(--color-primary);
+  --bs-btn-hover-bg: var(--color-primary);
+  --bs-btn-hover-border-color: var(--color-primary);
+  --bs-btn-active-bg: var(--color-primary);
+  --bs-btn-active-border-color: var(--color-primary);
+}
+
+/* Gold accent CTA — the primary "do it" action */
+.btn-accent {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--color-accent);
+  --bs-btn-border-color: var(--color-accent);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--color-accent-dark);
+  --bs-btn-hover-border-color: var(--color-accent-dark);
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: var(--color-accent-dark);
+  --bs-btn-active-border-color: var(--color-accent-dark);
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: var(--color-accent);
+  --bs-btn-disabled-border-color: var(--color-accent);
+  color: #fff;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+/* ---------- Cards ---------- */
 .card {
   border-radius: 12px;
-  transition: box-shadow 0.2s ease;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card.shadow-sm {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
 }
 
 .card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.10) !important;
 }
 
 .card-header {
   border-radius: 12px 12px 0 0 !important;
-  padding: 0.75rem 1.25rem;
+  padding: 0.85rem 1.25rem;
+  font-family: var(--font-body);
+  letter-spacing: 0.01em;
 }
 
-.btn {
-  border-radius: 8px;
+/* On-brand section headers (override Bootstrap bg utilities inside form cards) */
+.card-header.section-primary {
+  background-color: var(--color-primary) !important;
+  color: #fff;
+}
+.card-header.section-secondary {
+  background-color: var(--color-secondary) !important;
+  color: #fff;
+}
+.card-header.section-accent {
+  background-color: var(--color-accent) !important;
+  color: #fff;
 }
 
+/* ---------- Badges ---------- */
 .badge {
   border-radius: 6px;
-  padding: 0.35em 0.65em;
+  padding: 0.4em 0.7em;
+  font-weight: 600;
 }
 
 .bg-primary-subtle {
-  background-color: #dbeafe;
+  background-color: var(--color-muted) !important;
 }
 
 .text-primary {
-  color: #1d4ed8 !important;
+  color: var(--color-primary) !important;
+}
+
+.text-accent {
+  color: var(--color-accent) !important;
+}
+
+/* ---------- Forms ---------- */
+.form-label {
+  color: var(--color-foreground);
+}
+
+.form-control,
+.form-select {
+  border-radius: 8px;
+  border-color: var(--color-border);
 }
 
 .form-control:focus,
 .form-select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.15);
+}
+
+/* ---------- PDF viewer ---------- */
+.pdf-frame {
+  width: 100%;
+  height: calc(100vh - 230px);
+  min-height: 480px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background-color: var(--color-surface);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+/* ---------- Footer ---------- */
+footer.bg-light {
+  background-color: var(--color-surface) !important;
+  border-top: 1px solid var(--color-border) !important;
+}
+
+/* ---------- Links ---------- */
+a {
+  color: var(--color-secondary);
+}
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+/* ---------- Accessibility: reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .btn:hover {
+    transform: none;
+  }
 }
