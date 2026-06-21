@@ -84,7 +84,11 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Acesse **http://localhost:5000** no navegador.
+Acesse **http://localhost:5001** no navegador.
+
+> **Nota (macOS):** o app roda na porta **5001** por padrão, porque a porta
+> 5000 é ocupada pelo *AirPlay Receiver* do macOS (processo Control Center).
+> Para usar outra porta: `PORT=8000 python main.py`.
 
 1. Clique em **Cadastre-se** para criar uma conta
 2. Faça login
