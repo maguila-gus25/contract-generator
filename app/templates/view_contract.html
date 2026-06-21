@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Contrato Nº {{ record.number }} — Contract Generator{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div class="d-flex align-items-center gap-2">
+    <a href="{{ url_for('contracts.dashboard') }}" class="btn btn-outline-primary btn-sm"
+       title="Voltar ao dashboard">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h3 class="fw-bold mb-0">Contrato Nº {{ record.number }}</h3>
+      <span class="badge bg-primary-subtle text-primary fw-semibold mt-1">
+        {{ record.type_label() }}
+      </span>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    {% if record.docx_path %}
+    <a href="{{ url_for('contracts.download_contract', contract_id=record.id, fmt='docx') }}"
+       class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-file-word me-1"></i>Baixar DOCX
+    </a>
+    {% endif %}
+    <a href="{{ url_for('contracts.download_contract', contract_id=record.id, fmt='pdf') }}"
+       class="btn btn-accent btn-sm">
+      <i class="bi bi-download me-1"></i>Baixar PDF
+    </a>
+  </div>
+</div>
+
+<iframe src="{{ url_for('contracts.view_pdf', contract_id=record.id) }}"
+        class="pdf-frame"
+        title="Pré-visualização do contrato Nº {{ record.number }}">
+  <p class="p-4">
+    Seu navegador não consegue exibir o PDF.
+    <a href="{{ url_for('contracts.download_contract', contract_id=record.id, fmt='pdf') }}">
+      Clique aqui para baixá-lo.
+    </a>
+  </p>
+</iframe>
+{% endblock %}

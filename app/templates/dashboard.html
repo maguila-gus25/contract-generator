@@ -31,28 +31,35 @@
         <p class="small text-muted mb-2">
           <i class="bi bi-briefcase me-1"></i><strong>Contratado:</strong> {{ c.contracted_name }}
         </p>
-        <p class="small fw-semibold text-success mb-3">
+        <p class="small fw-semibold text-accent mb-3">
           R$ {{ "%.2f"|format(c.value) }}
           <span class="text-muted fw-normal">— {{ c.payment_method }}</span>
         </p>
 
+        {% if c.pdf_path %}
+        <a href="{{ url_for('contracts.view_contract', contract_id=c.id) }}"
+           class="btn btn-primary btn-sm w-100 mb-2">
+          <i class="bi bi-eye me-1"></i>Visualizar
+        </a>
+        {% endif %}
+
         <div class="d-flex gap-2">
           {% if c.docx_path %}
           <a href="{{ url_for('contracts.download_contract', contract_id=c.id, fmt='docx') }}"
-             class="btn btn-outline-secondary btn-sm flex-fill">
+             class="btn btn-outline-primary btn-sm flex-fill">
             <i class="bi bi-file-word me-1"></i>DOCX
           </a>
           {% endif %}
           {% if c.pdf_path %}
           <a href="{{ url_for('contracts.download_contract', contract_id=c.id, fmt='pdf') }}"
-             class="btn btn-outline-danger btn-sm flex-fill">
+             class="btn btn-outline-primary btn-sm flex-fill">
             <i class="bi bi-file-pdf me-1"></i>PDF
           </a>
           {% endif %}
           <form method="POST"
                 action="{{ url_for('contracts.delete_contract', contract_id=c.id) }}"
                 onsubmit="return confirm('Excluir este contrato?')">
-            <button type="submit" class="btn btn-outline-danger btn-sm">
+            <button type="submit" class="btn btn-outline-danger btn-sm" title="Excluir contrato">
               <i class="bi bi-trash"></i>
             </button>
           </form>
