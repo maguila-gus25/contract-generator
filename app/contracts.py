@@ -134,6 +134,36 @@ def new_contract():
     return render_template("new_contract.html", form_data={})
 
 
+@contracts_bp.route("/contracts/<int:contract_id>/view")
+@login_required
+def view_contract(contract_id: int):
+    record = ContractRecord.query.get_or_404(contract_id)
+    if record.user_id != current_user.id:
+        abort(403)
+
+    if not record.pdf_path or not os.path.exists(record.pdf_path):
+        flash("PDF não disponível para este contrato.", "danger")
+        return redirect(url_for("contracts.dashboard"))
+
+    return render_template("view_contract.html", record=record)
+
+
+@contracts_bp.route("/contracts/<int:contract_id>/view/pdf")
+@login_required
+def view_pdf(contract_id: int):
+    record = ContractRecord.query.get_or_404(contract_id)
+    if record.user_id != current_user.id:
+        abort(403)
+
+    if record.pdf_path and os.path.exists(record.pdf_path):
+        return send_file(record.pdf_path, mimetype="application/pdf",
+                         as_attachment=False,
+                         download_name=f"contrato_{record.number}.pdf")
+
+    flash("Arquivo não encontrado.", "danger")
+    return redirect(url_for("contracts.dashboard"))
+
+
 @contracts_bp.route("/contracts/<int:contract_id>/download/<fmt>")
 @login_required
 def download_contract(contract_id: int, fmt: str):
