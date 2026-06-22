@@ -1,12 +1,26 @@
+import os
+
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
-from . import db
+from . import db, limiter
 from .models import User
 
 auth_bp = Blueprint("auth", __name__)
 
 
+def validar_senha(senha: str):
+    """Valida a força da senha. Retorna mensagem de erro ou None se ok."""
+    if len(senha) < 8:
+        return "A senha deve ter pelo menos 8 caracteres."
+    if not any(c.isalpha() for c in senha):
+        return "A senha deve conter pelo menos uma letra."
+    if not any(c.isdigit() for c in senha):
+        return "A senha deve conter pelo menos um número."
+    return None
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute", methods=["POST"])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("contracts.dashboard"))
@@ -39,12 +53,13 @@ def register():
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
 
+        erro_senha = validar_senha(password)
         if not name or not email or not password:
             flash("Todos os campos são obrigatórios.", "danger")
         elif password != confirm:
             flash("As senhas não coincidem.", "danger")
-        elif len(password) < 6:
-            flash("A senha deve ter pelo menos 6 caracteres.", "danger")
+        elif erro_senha:
+            flash(erro_senha, "danger")
         elif User.query.filter_by(email=email).first():
             flash("Este e-mail já está cadastrado.", "danger")
         else:
@@ -64,4 +79,68 @@ def register():
 def logout():
     logout_user()
     flash("Você saiu da sua conta.", "info")
+    return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/account", methods=["GET", "POST"])
+@login_required
+def account():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+
+        existente = User.query.filter_by(email=email).first()
+        if not name or not email:
+            flash("Nome e e-mail são obrigatórios.", "danger")
+        elif existente and existente.id != current_user.id:
+            flash("Este e-mail já está em uso por outra conta.", "danger")
+        else:
+            current_user.name = name
+            current_user.email = email
+            db.session.commit()
+            flash("Dados atualizados com sucesso.", "success")
+            return redirect(url_for("auth.account"))
+
+    return render_template("account.html")
+
+
+@auth_bp.route("/account/password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    if request.method == "POST":
+        atual = request.form.get("current_password", "")
+        nova = request.form.get("new_password", "")
+        confirm = request.form.get("confirm_password", "")
+
+        erro_senha = validar_senha(nova)
+        if not current_user.check_password(atual):
+            flash("Senha atual incorreta.", "danger")
+        elif nova != confirm:
+            flash("As senhas não coincidem.", "danger")
+        elif erro_senha:
+            flash(erro_senha, "danger")
+        else:
+            current_user.set_password(nova)
+            db.session.commit()
+            flash("Senha alterada com sucesso.", "success")
+            return redirect(url_for("auth.account"))
+
+    return render_template("account_password.html")
+
+
+@auth_bp.route("/account/delete", methods=["POST"])
+@login_required
+def delete_account():
+    user = current_user._get_current_object()
+
+    # Remove os arquivos gerados dos contratos do usuário antes de apagá-lo.
+    for contrato in user.contracts:
+        for path in (contrato.docx_path, contrato.pdf_path):
+            if path and os.path.exists(path):
+                os.remove(path)
+
+    logout_user()
+    db.session.delete(user)
+    db.session.commit()
+    flash("Sua conta e seus contratos foram excluídos.", "info")
     return redirect(url_for("auth.login"))
