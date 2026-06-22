@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Minha Conta — Contract Generator{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{{ url_for('contracts.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <h3 class="fw-bold mb-0">Minha Conta</h3>
+</div>
+
+<div class="row g-4">
+  <!-- Dados do perfil -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header section-primary fw-semibold">
+        <i class="bi bi-person me-2"></i>Dados do perfil
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('auth.account') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Nome completo</label>
+            <input type="text" name="name" class="form-control"
+                   value="{{ current_user.name }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">E-mail</label>
+            <input type="email" name="email" class="form-control"
+                   value="{{ current_user.email }}" required>
+          </div>
+          <button type="submit" class="btn btn-accent">
+            <i class="bi bi-check-lg me-1"></i>Salvar alterações
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Segurança -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header section-secondary fw-semibold">
+        <i class="bi bi-shield-lock me-2"></i>Segurança
+      </div>
+      <div class="card-body d-flex flex-column">
+        <p class="text-muted small">Gerencie a senha e o acesso à sua conta.</p>
+        <a href="{{ url_for('auth.change_password') }}" class="btn btn-outline-primary mb-4">
+          <i class="bi bi-key me-1"></i>Trocar senha
+        </a>
+
+        <hr>
+        <h6 class="fw-bold text-danger">Excluir conta</h6>
+        <p class="text-muted small">
+          Esta ação é permanente e remove todos os seus contratos.
+          Digite <strong>EXCLUIR</strong> para confirmar.
+        </p>
+        <form method="POST" action="{{ url_for('auth.delete_account') }}"
+              onsubmit="return document.getElementById('confirm_delete').value === 'EXCLUIR';">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" id="confirm_delete" class="form-control mb-2"
+                 placeholder="EXCLUIR" autocomplete="off">
+          <button type="submit" class="btn btn-outline-danger">
+            <i class="bi bi-trash me-1"></i>Excluir minha conta
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

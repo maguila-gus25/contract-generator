@@ -26,7 +26,22 @@
        class="btn btn-accent btn-sm">
       <i class="bi bi-download me-1"></i>Baixar PDF
     </a>
+    <a href="{{ url_for('contracts.download_contract', contract_id=record.id, fmt='pdf') }}"
+       class="btn btn-success btn-sm"
+       onclick="window.open('https://assina.ufsc.br', '_blank', 'noopener')">
+      <i class="bi bi-pen me-1"></i>Assinar no Assina UFSC
+    </a>
   </div>
+</div>
+
+<div class="alert alert-light border small text-muted d-flex align-items-start gap-2 mb-4">
+  <i class="bi bi-info-circle mt-1"></i>
+  <span>
+    Ao clicar em <strong>Assinar no Assina UFSC</strong>, o PDF é baixado e o portal
+    <a href="https://assina.ufsc.br" target="_blank" rel="noopener">assina.ufsc.br</a>
+    abre em nova aba. Envie o arquivo lá para assinar com certificado
+    ICP-Brasil, gov.br ou idUFSC.
+  </span>
 </div>
 
 <iframe src="{{ url_for('contracts.view_pdf', contract_id=record.id) }}"
