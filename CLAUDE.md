@@ -13,9 +13,10 @@ This file provides guidance to Claude Code when working with code in this reposi
 | Backend     | Python 3 + Flask                      |
 | Database    | SQLite + Flask-SQLAlchemy             |
 | Auth        | Flask-Login (sessão) + Werkzeug hash  |
+| Segurança   | Flask-WTF (CSRF) + Flask-Limiter (rate limit no login) |
 | DOCX        | python-docx                           |
 | PDF         | fpdf2                                  |
-| Frontend    | Jinja2 templates + CSS3               |
+| Frontend    | Jinja2 templates + CSS3 + JS vanilla  |
 
 > **Nota:** A aplicação ativa é o app Flask em `app/`. As pastas `backend/`
 > (protótipo FastAPI), `contract-generator/` (com hífen) e `frontend/`
@@ -27,18 +28,19 @@ This file provides guidance to Claude Code when working with code in this reposi
 contract-generator/
 ├── main.py                 # Entrypoint: create_app() + app.run()
 ├── app/                    # Aplicação Flask (camada web)
-│   ├── __init__.py         # App factory: db, login_manager, blueprints
-│   ├── auth.py             # Blueprint auth (login/register/logout)
-│   ├── contracts.py        # Blueprint contratos (dashboard/new/download/delete)
+│   ├── __init__.py         # App factory: db, login_manager, csrf, limiter, blueprints
+│   ├── auth.py             # Blueprint auth (login/register/logout + conta self-service)
+│   ├── contracts.py        # Blueprint contratos (dashboard/new/download/delete + api/cep)
 │   ├── models.py           # Modelos Flask-SQLAlchemy (User, Contract)
-│   ├── templates/          # Jinja2: base, login, register, dashboard, new_contract
-│   └── static/css/         # Estilos
+│   ├── templates/          # Jinja2: base, login, register, dashboard, new_contract, account*
+│   ├── static/css/         # Estilos
+│   └── static/js/          # cep.js (autocomplete de endereço)
 ├── contract_generator/     # Biblioteca de geração de contratos (domínio, sem Flask)
 │   ├── models/             # contract.py, party.py, clause.py
 │   ├── generators/         # base.py, docx_generator.py, pdf_generator.py
 │   ├── services/           # cep_service.py, cnpj_service.py (consultas externas)
 │   └── templates/          # locacao.json, servico.json (modelos de cláusulas)
-├── tests/                  # Suíte pytest (arquivos ainda vazios)
+├── tests/                  # Suíte pytest (test_auth.py: isolamento + CRUD)
 ├── requirements.txt        # Deps de runtime
 ├── requirements-dev.txt    # Deps de dev (pytest, black, flake8, mypy)
 ├── pytest.ini
@@ -77,12 +79,16 @@ via `db.create_all()` no app factory. Não é necessário Docker nem PostgreSQL.
 
 ## Environment Variables
 
-O `.env` e o `docker-compose.yml` são legado do protótipo FastAPI/Postgres.
-O app Flask atual **não** os consome — a config fica em `app/__init__.py`
-(`SECRET_KEY` e `SQLALCHEMY_DATABASE_URI` estão hardcoded).
+A config fica em `app/__init__.py` e lê do ambiente (via `python-dotenv`, que
+carrega o `.env` se existir). Variáveis reconhecidas:
 
-> ⚠️ `SECRET_KEY` está fixa como `"dev-secret-key-change-in-production"`.
-> Trocar por valor vindo do ambiente antes de qualquer deploy.
+- `SECRET_KEY` — assina as sessões. Se ausente, o app gera uma chave **efêmera**
+  com `secrets.token_hex(32)` e loga um warning (as sessões caem a cada
+  reinício). Defina em produção. Ver `.env.example`.
+- `DATABASE_URL` — URI do SQLAlchemy. Padrão: `sqlite:///contracts.db`.
+
+> O `docker-compose.yml` (Postgres) é legado do protótipo FastAPI e **não** é
+> usado pelo app SQLite atual.
 
 ## Code Conventions
 
@@ -91,8 +97,36 @@ O app Flask atual **não** os consome — a config fica em `app/__init__.py`
 - Modelos Flask-SQLAlchemy em `app/models.py`; lógica de domínio (geração,
   serviços, modelos de contrato) isolada em `contract_generator/`
 - Geradores estendem `GeradorBase` (`contract_generator/generators/base.py`)
-- Senhas com `werkzeug.security` (hash); sessões via Flask-Login
+- Senhas com `werkzeug.security` (hash); sessões via Flask-Login. Força de
+  senha validada por `validar_senha()` em `app/auth.py` (≥8, com letra e número)
 - Sem `print()` em código de produção — usar `logging`
+
+### Rotas
+
+`auth_bp` (`app/auth.py`):
+- `GET/POST /login` — autenticação (rate limit `5/min` no POST via Flask-Limiter)
+- `GET/POST /register` — cadastro (login automático após sucesso)
+- `GET /logout`
+- `GET/POST /account` — editar perfil (nome/e-mail)
+- `GET/POST /account/password` — trocar senha (exige a senha atual)
+- `POST /account/delete` — excluir a própria conta (cascade nos contratos)
+
+`contracts_bp` (`app/contracts.py`):
+- `GET /` — dashboard (lista os contratos do `current_user`)
+- `GET/POST /contracts/new` — gerar contrato (DOCX/PDF)
+- `GET /contracts/<id>/view` e `/view/pdf` — visualização inline
+- `GET /contracts/<id>/download/<fmt>` — download (`docx`/`pdf`)
+- `POST /contracts/<id>/delete`
+- `GET /api/cep/<cep>` — JSON para autocomplete de endereço (usa `CepService`)
+
+### Segurança
+
+- Todas as rotas de contrato/conta usam `@login_required` e checam
+  `record.user_id != current_user.id → abort(403)` (isolamento entre usuários)
+- CSRF habilitado globalmente via Flask-WTF: todo `<form method="post">`
+  precisa de `<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">`
+- `create_app(test_config=None)` aceita overrides para testes (ex.: DB em
+  memória, `WTF_CSRF_ENABLED=False`, `RATELIMIT_ENABLED=False`)
 
 ## Git Workflow
 
