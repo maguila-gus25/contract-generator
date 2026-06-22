@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import date, datetime
 from flask import (Blueprint, render_template, redirect, url_for,
-                   flash, request, send_file, abort)
+                   flash, request, send_file, abort, jsonify)
 from flask_login import login_required, current_user
 from . import db
 from .models import ContractRecord
@@ -132,6 +132,30 @@ def new_contract():
         return redirect(url_for("contracts.dashboard"))
 
     return render_template("new_contract.html", form_data={})
+
+
+@contracts_bp.route("/api/cep/<cep>")
+@login_required
+def api_cep(cep: str):
+    """Consulta o CEP (ViaCEP) e devolve os campos de endereço em JSON.
+
+    Protegido por login para não servir como proxy aberto à API externa.
+    """
+    from contract_generator.services.cep_service import CepService
+
+    try:
+        endereco = CepService().buscar_como_endereco(cep)
+    except ValueError:
+        return jsonify({"erro": "CEP não encontrado."}), 404
+    except ConnectionError:
+        return jsonify({"erro": "Falha ao consultar o CEP."}), 502
+
+    return jsonify({
+        "logradouro": endereco.logradouro,
+        "bairro": endereco.bairro,
+        "cidade": endereco.cidade,
+        "estado": endereco.estado,
+    })
 
 
 @contracts_bp.route("/contracts/<int:contract_id>/view")
