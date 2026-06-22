@@ -13,13 +13,17 @@ Projeto desenvolvido em Python como parte do portfólio pessoal. O sistema permi
 ## Funcionalidades
 
 - Autenticação de usuários (cadastro, login, logout)
+- **Gerenciamento de conta:** editar perfil, trocar senha e excluir a própria conta
 - Geração de contratos de Prestação de Serviços e Locação de Imóvel
 - Download do contrato nos formatos **.docx** e **.pdf**
+- Visualização do PDF inline no navegador
+- **Assinatura digital:** botão que baixa o PDF e abre o portal [Assina UFSC](https://assina.ufsc.br) para assinar com certificado ICP-Brasil, gov.br ou idUFSC
 - Cláusulas carregadas automaticamente a partir de templates JSON
-- Consulta de endereço via CEP (API ViaCEP)
+- **Autocomplete de endereço pelo CEP** (API ViaCEP): ao digitar o CEP, logradouro, bairro, cidade e estado são preenchidos automaticamente
 - Consulta de dados de empresa via CNPJ (API ReceitaWS)
 - Dashboard com histórico de contratos por usuário
 - Exclusão de contratos
+- **Segurança:** isolamento de dados entre usuários, proteção CSRF nos formulários e rate limit no login
 
 ---
 
@@ -30,10 +34,11 @@ Projeto desenvolvido em Python como parte do portfólio pessoal. O sistema permi
 | Backend      | Python 3 + Flask        |
 | Banco de dados | SQLite + Flask-SQLAlchemy |
 | Autenticação | Flask-Login + Werkzeug  |
+| Segurança    | Flask-WTF (CSRF) + Flask-Limiter (rate limit) |
 | Geração DOCX | python-docx             |
 | Geração PDF  | fpdf2                   |
 | HTTP/APIs    | requests                |
-| Frontend     | Bootstrap 5 + Jinja2    |
+| Frontend     | Bootstrap 5 + Jinja2 + JS vanilla |
 
 ---
 
@@ -93,9 +98,10 @@ Acesse **http://localhost:5001** no navegador.
 1. Clique em **Cadastre-se** para criar uma conta
 2. Faça login
 3. Clique em **Novo Contrato**
-4. Preencha os dados do contrato, contratante e contratado
+4. Preencha os dados do contrato, contratante e contratado — digite o **CEP** e o endereço é preenchido automaticamente
 5. Clique em **Gerar Contrato**
-6. Baixe o arquivo em **DOCX** ou **PDF** direto do dashboard
+6. Baixe o arquivo em **DOCX** ou **PDF**, ou clique em **Assinar no Assina UFSC** na visualização do contrato
+7. Gerencie sua conta pelo menu **Minha conta** (perfil, senha e exclusão)
 
 ---
 
@@ -110,7 +116,8 @@ contract-generator/
 │   ├── contracts.py              # Rotas de contratos
 │   ├── models.py                 # Modelos do banco (User, ContractRecord)
 │   ├── templates/                # Templates HTML (Jinja2 + Bootstrap)
-│   └── static/css/style.css      # Estilos customizados
+│   ├── static/css/style.css      # Estilos customizados
+│   └── static/js/cep.js          # Autocomplete de endereço pelo CEP
 │
 ├── contract_generator/           # Biblioteca de geração de contratos
 │   ├── models/
@@ -156,6 +163,7 @@ pytest
 - Geração programática de documentos Word e PDF com bibliotecas Python
 - Consumo de APIs REST externas (ViaCEP, ReceitaWS)
 - Templates JSON para desacoplar conteúdo jurídico da lógica de programação
+- Segurança web: isolamento de dados por usuário, proteção CSRF (Flask-WTF) e rate limit (Flask-Limiter)
 
 ---
 
