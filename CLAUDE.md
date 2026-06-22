@@ -18,9 +18,10 @@ This file provides guidance to Claude Code when working with code in this reposi
 | PDF         | fpdf2                                  |
 | Frontend    | Jinja2 templates + CSS3 + JS vanilla  |
 
-> **Nota:** A aplicação ativa é o app Flask em `app/`. As pastas `backend/`
-> (protótipo FastAPI), `contract-generator/` (com hífen) e `frontend/`
-> (UI estática antiga) são legado e **não** fazem parte do app em execução.
+> **Nota:** A aplicação ativa é o app Flask em `app/`, que usa a biblioteca de
+> domínio `contract_generator/` (com underscore). As pastas `backend/`
+> (protótipo FastAPI) e `frontend/` (UI estática antiga) são legado e **não**
+> fazem parte do app em execução.
 
 ## Project Structure
 
