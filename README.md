@@ -165,7 +165,6 @@ pytest
 - Templates JSON para desacoplar conteúdo jurídico da lógica de programação
 - Segurança web: isolamento de dados por usuário, proteção CSRF (Flask-WTF) e rate limit (Flask-Limiter)
 
----
 
 ## Licença
 
