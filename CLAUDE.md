@@ -11,7 +11,8 @@ This file provides guidance to Claude Code when working with code in this reposi
 | Layer       | Technology                            |
 |-------------|---------------------------------------|
 | Backend     | Python 3 + Flask                      |
-| Database    | SQLite + Flask-SQLAlchemy             |
+| Database    | Flask-SQLAlchemy — SQLite (local) / Neon Postgres (produção) |
+| Deploy      | Vercel (serverless, preset `flask`)   |
 | Auth        | Flask-Login (sessão) + Werkzeug hash  |
 | Segurança   | Flask-WTF (CSRF) + Flask-Limiter (rate limit no login) |
 | DOCX        | python-docx                           |
@@ -45,8 +46,11 @@ contract-generator/
 ├── requirements.txt        # Deps de runtime
 ├── requirements-dev.txt    # Deps de dev (pytest, black, flake8, mypy)
 ├── pytest.ini
+├── vercel.json             # Deploy: preset `flask` (entrypoint = main.py)
+├── .vercelignore           # Exclui venv/tests/backend/frontend do bundle
+├── .python-version         # Runtime Python do Vercel (3.12)
 ├── .env                    # Secrets (never commit)
-└── docker-compose.yml      # Postgres (legado — não usado pelo app SQLite)
+└── docker-compose.yml      # Postgres (legado — não usado pelo app)
 ```
 
 ## Development Commands
@@ -86,10 +90,39 @@ carrega o `.env` se existir). Variáveis reconhecidas:
 - `SECRET_KEY` — assina as sessões. Se ausente, o app gera uma chave **efêmera**
   com `secrets.token_hex(32)` e loga um warning (as sessões caem a cada
   reinício). Defina em produção. Ver `.env.example`.
-- `DATABASE_URL` — URI do SQLAlchemy. Padrão: `sqlite:///contracts.db`.
+- `DATABASE_URL` — URI do SQLAlchemy. Padrão: `sqlite:///contracts.db`. Em
+  produção é injetada pela integração Neon; `_normalizar_database_url()` em
+  `app/__init__.py` converte `postgres://`/`postgresql://` para
+  `postgresql+psycopg://` (driver psycopg 3, exigido pelo SQLAlchemy 2.x).
 
 > O `docker-compose.yml` (Postgres) é legado do protótipo FastAPI e **não** é
-> usado pelo app SQLite atual.
+> usado nem pelo SQLite local nem pelo Neon em produção.
+
+## Deploy (Vercel)
+
+O app roda em https://contract-generator-lilac.vercel.app. O `vercel.json` usa o
+preset `flask`, que detecta o WSGI por `main.py` — **não** existe entrypoint em
+`api/` (uma tentativa anterior com `api/index.py` + `rewrites` causou 404 em
+todas as rotas, porque o builder monta a função na raiz).
+
+Deploy automático pela integração GitHub: merge na `main` publica em produção,
+cada PR gera um preview. Manualmente: `vercel deploy --prod`.
+
+### Implicações do runtime serverless
+
+Filesystem somente-leitura, com `/tmp` efêmero e não compartilhado entre
+instâncias. Ao mexer em geração de arquivos ou persistência, respeite:
+
+- **Nada de gravar arquivo para ler depois.** Os DOCX/PDF vivem no banco
+  (`ContractRecord.docx_data` / `pdf_data`, `LargeBinary`) e são servidos de
+  memória via `BytesIO`. `OUTPUT_DIR` aponta para `/tmp` só como área de
+  passagem — o arquivo é lido e removido na mesma requisição.
+- Os campos legados `docx_path`/`pdf_path` só atendem registros antigos; use
+  as properties `has_docx`/`has_pdf` para checar disponibilidade.
+- `_migrar_colunas_de_arquivo()` adiciona as colunas de blob em bancos
+  pré-existentes, já que `db.create_all()` não altera tabelas criadas.
+- Sem `SECRET_KEY` no ambiente, cada instância gera a sua e as sessões quebram
+  de forma intermitente — não só a cada restart.
 
 ## Code Conventions
 

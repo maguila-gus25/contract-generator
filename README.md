@@ -2,6 +2,8 @@
 
 Gerador de contratos jurídicos em formato DOCX e PDF, com interface web, autenticação de usuários e preenchimento automático via API de CEP e CNPJ.
 
+**Aplicação no ar:** https://contract-generator-lilac.vercel.app
+
 ---
 
 ## Sobre o Projeto
@@ -32,7 +34,8 @@ Projeto desenvolvido em Python como parte do portfólio pessoal. O sistema permi
 | Camada       | Tecnologia              |
 |--------------|-------------------------|
 | Backend      | Python 3 + Flask        |
-| Banco de dados | SQLite + Flask-SQLAlchemy |
+| Banco de dados | Flask-SQLAlchemy — SQLite (local) / Postgres (produção) |
+| Deploy       | Vercel (serverless) + Neon Postgres |
 | Autenticação | Flask-Login + Werkzeug  |
 | Segurança    | Flask-WTF (CSRF) + Flask-Limiter (rate limit) |
 | Geração DOCX | python-docx             |
@@ -136,8 +139,8 @@ contract-generator/
 │       └── locacao.json          # Cláusulas do contrato de locação
 │
 ├── tests/                        # Testes automatizados
-├── output/                       # Arquivos gerados (não versionado)
-├── main.py                       # Ponto de entrada
+├── main.py                       # Ponto de entrada (e entrypoint do Vercel)
+├── vercel.json                   # Configuração de deploy (preset Flask)
 ├── requirements.txt              # Dependências de produção
 └── requirements-dev.txt          # Dependências de desenvolvimento
 ```
@@ -153,13 +156,56 @@ pytest
 
 ---
 
+## Deploy (Vercel)
+
+A aplicação roda em produção no Vercel, com **Neon Postgres** (Marketplace) como
+banco. O `vercel.json` usa o preset `flask`, que detecta o app por `main.py` —
+não há entrypoint manual em `api/`.
+
+O deploy é automático pela integração com o GitHub:
+
+- merge na `main` → publica em produção;
+- cada Pull Request → gera um deploy de preview.
+
+Para publicar manualmente:
+
+```bash
+vercel deploy --prod
+```
+
+### Variáveis de ambiente
+
+| Variável       | Origem                          | Observação                                    |
+|----------------|---------------------------------|-----------------------------------------------|
+| `SECRET_KEY`   | definida manualmente            | Sem ela as sessões caem a cada redeploy       |
+| `DATABASE_URL` | injetada pela integração Neon   | Chega como `postgres://` e é normalizada no app |
+
+### Restrições do ambiente serverless
+
+O runtime do Vercel tem **filesystem somente-leitura** (só `/tmp`, efêmero e não
+compartilhado entre instâncias). Duas consequências no código:
+
+- **Os DOCX/PDF gerados são gravados no banco**, em colunas `LargeBinary`, e
+  servidos de memória. Os geradores ainda escrevem em `/tmp`, mas apenas de
+  passagem: o arquivo é lido, persistido e removido. Não existe mais uma pasta
+  `output/` em produção.
+- **SQLite não serve para produção.** O `DATABASE_URL` aponta para o Postgres;
+  localmente, sem essa variável, o app continua caindo no `sqlite:///contracts.db`.
+
+Bancos criados antes dessa mudança recebem as colunas novas automaticamente na
+inicialização, e registros antigos que apontam para arquivos em disco continuam
+sendo lidos.
+
+---
+
 ## Aprendizados
 
 - Aplicação de **Orientação a Objetos** com herança, encapsulamento e polimorfismo
 - Princípio **Open/Closed (SOLID)**: geradores intercambiáveis sem alterar o código cliente
 - **Flask** com Blueprints para separação de responsabilidades
 - Autenticação stateful com **Flask-Login** e hash de senha com **Werkzeug**
-- ORM com **Flask-SQLAlchemy** e banco SQLite
+- ORM com **Flask-SQLAlchemy**, com o mesmo código atendendo SQLite (local) e Postgres (produção)
+- **Deploy serverless** na Vercel: adaptar a aplicação a um filesystem somente-leitura e a instâncias sem estado compartilhado
 - Geração programática de documentos Word e PDF com bibliotecas Python
 - Consumo de APIs REST externas (ViaCEP, ReceitaWS)
 - Templates JSON para desacoplar conteúdo jurídico da lógica de programação
