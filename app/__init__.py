@@ -22,6 +22,44 @@ csrf = CSRFProtect()
 limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 
+def _normalizar_database_url(url: str) -> str:
+    """Ajusta a URL do Postgres para o driver usado pelo SQLAlchemy 2.x.
+
+    Provedores gerenciados (Neon, Supabase, Heroku) entregam `postgres://`,
+    que o SQLAlchemy 2.x não reconhece, e `postgresql://` cai no psycopg2.
+    Aqui o driver é o psycopg 3, então normalizamos para `postgresql+psycopg`.
+    """
+    for prefixo in ("postgres://", "postgresql://"):
+        if url.startswith(prefixo):
+            return "postgresql+psycopg://" + url[len(prefixo):]
+    return url
+
+
+def _migrar_colunas_de_arquivo(app) -> None:
+    """Adiciona as colunas de blob em bancos criados antes da migração.
+
+    `db.create_all()` só cria tabelas que não existem — não altera as que já
+    existem. Sem isso, um `contracts.db` antigo quebraria toda query em
+    `ContractRecord` por causa das colunas novas.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    if "contracts" not in inspector.get_table_names():
+        return
+
+    existentes = {col["name"] for col in inspector.get_columns("contracts")}
+    faltantes = {"docx_data", "pdf_data"} - existentes
+    if not faltantes:
+        return
+
+    tipo = "BYTEA" if db.engine.dialect.name == "postgresql" else "BLOB"
+    with db.engine.begin() as conn:
+        for coluna in sorted(faltantes):
+            conn.execute(text(f"ALTER TABLE contracts ADD COLUMN {coluna} {tipo}"))
+    logger.info("Colunas adicionadas em `contracts`: %s", ", ".join(sorted(faltantes)))
+
+
 def create_app(test_config: dict | None = None):
     app = Flask(__name__)
 
@@ -36,10 +74,16 @@ def create_app(test_config: dict | None = None):
             "Defina SECRET_KEY em produção para manter as sessões válidas."
         )
     app.config["SECRET_KEY"] = secret_key
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-        "DATABASE_URL", "sqlite:///contracts.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = _normalizar_database_url(
+        os.environ.get("DATABASE_URL", "sqlite:///contracts.db")
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    # Em serverless cada instância mantém seu pool; reciclar conexões evita
+    # reaproveitar sockets já derrubados pelo Postgres gerenciado.
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+    }
 
     # Persistência do "Lembrar-me" e endurecimento dos cookies de sessão.
     app.config["REMEMBER_COOKIE_DURATION"] = timedelta(days=30)
@@ -67,6 +111,12 @@ def create_app(test_config: dict | None = None):
     app.register_blueprint(contracts_bp)
 
     with app.app_context():
-        db.create_all()
+        try:
+            db.create_all()
+            _migrar_colunas_de_arquivo(app)
+        except Exception:
+            # Uma falha transitória do banco não pode derrubar o processo
+            # inteiro no cold start; as rotas devolvem o erro por requisição.
+            logger.exception("Falha ao preparar o schema do banco.")
 
     return app
