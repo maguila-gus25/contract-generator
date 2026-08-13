@@ -1,0 +1,12 @@
+venv/
+.venv/
+tests/
+backend/
+frontend/
+scratch/
+output/
+instance/
+docker-compose.yml
+requirements-dev.txt
+.pytest_cache/
+__pycache__/
