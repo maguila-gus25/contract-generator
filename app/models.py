@@ -39,8 +39,23 @@ class ContractRecord(db.Model):
     start_date = db.Column(db.String(10), nullable=False)
     end_date = db.Column(db.String(10))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Os arquivos gerados ficam no próprio banco: o filesystem do runtime
+    # serverless é somente-leitura (e o /tmp não é compartilhado entre
+    # instâncias), então não há onde guardá-los em disco.
+    docx_data = db.Column(db.LargeBinary)
+    pdf_data = db.Column(db.LargeBinary)
+    # Legado: registros criados antes da migração para blobs apontam para
+    # arquivos em disco. Mantidos para leitura no ambiente local.
     docx_path = db.Column(db.String(500))
     pdf_path = db.Column(db.String(500))
+
+    @property
+    def has_docx(self) -> bool:
+        return bool(self.docx_data or self.docx_path)
+
+    @property
+    def has_pdf(self) -> bool:
+        return bool(self.pdf_data or self.pdf_path)
 
     def type_label(self) -> str:
         labels = {"servico": "Prestação de Serviços", "locacao": "Locação de Imóvel"}
