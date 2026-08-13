@@ -36,7 +36,7 @@
           <span class="text-muted fw-normal">— {{ c.payment_method }}</span>
         </p>
 
-        {% if c.pdf_path %}
+        {% if c.has_pdf %}
         <a href="{{ url_for('contracts.view_contract', contract_id=c.id) }}"
            class="btn btn-primary btn-sm w-100 mb-2">
           <i class="bi bi-eye me-1"></i>Visualizar
@@ -44,13 +44,13 @@
         {% endif %}
 
         <div class="d-flex gap-2">
-          {% if c.docx_path %}
+          {% if c.has_docx %}
           <a href="{{ url_for('contracts.download_contract', contract_id=c.id, fmt='docx') }}"
              class="btn btn-outline-primary btn-sm flex-fill">
             <i class="bi bi-file-word me-1"></i>DOCX
           </a>
           {% endif %}
-          {% if c.pdf_path %}
+          {% if c.has_pdf %}
           <a href="{{ url_for('contracts.download_contract', contract_id=c.id, fmt='pdf') }}"
              class="btn btn-outline-primary btn-sm flex-fill">
             <i class="bi bi-file-pdf me-1"></i>PDF

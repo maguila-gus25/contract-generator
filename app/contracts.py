@@ -1,4 +1,6 @@
+import io
 import os
+import tempfile
 import uuid
 from datetime import date, datetime
 from flask import (Blueprint, render_template, redirect, url_for,
@@ -9,7 +11,15 @@ from .models import ContractRecord
 
 contracts_bp = Blueprint("contracts", __name__)
 
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
+# Os geradores escrevem em disco, mas o runtime serverless só aceita escrita
+# em /tmp — e de forma efêmera. O arquivo é lido de volta e persistido no
+# banco logo em seguida; o diretório serve apenas de área de passagem.
+OUTPUT_DIR = os.path.join(tempfile.gettempdir(), "contract-generator")
+
+
+def _servir_bytes(dados: bytes, nome: str, mimetype: str, inline: bool = False):
+    return send_file(io.BytesIO(dados), mimetype=mimetype,
+                     as_attachment=not inline, download_name=nome)
 
 
 def _build_contrato(form_data: dict):
@@ -99,18 +109,25 @@ def new_contract():
         base_path = os.path.join(OUTPUT_DIR, f"contrato_{uid}")
         os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-        docx_path = pdf_path = None
-        try:
-            from contract_generator.generators.docx_generator import DocxGenerator
-            docx_path = DocxGenerator().gerar(contrato, base_path)
-        except Exception as e:
-            flash(f"Erro ao gerar DOCX: {e}", "warning")
+        def gerar_bytes(gerador, formato: str) -> bytes | None:
+            """Gera o arquivo em /tmp, devolve o conteúdo e remove o rastro."""
+            caminho = None
+            try:
+                caminho = gerador.gerar(contrato, base_path)
+                with open(caminho, "rb") as arquivo:
+                    return arquivo.read()
+            except Exception as e:
+                flash(f"Erro ao gerar {formato}: {e}", "warning")
+                return None
+            finally:
+                if caminho and os.path.exists(caminho):
+                    os.remove(caminho)
 
-        try:
-            from contract_generator.generators.pdf_generator import PdfGenerator
-            pdf_path = PdfGenerator().gerar(contrato, base_path)
-        except Exception as e:
-            flash(f"Erro ao gerar PDF: {e}", "warning")
+        from contract_generator.generators.docx_generator import DocxGenerator
+        from contract_generator.generators.pdf_generator import PdfGenerator
+
+        docx_data = gerar_bytes(DocxGenerator(), "DOCX")
+        pdf_data = gerar_bytes(PdfGenerator(), "PDF")
 
         record = ContractRecord(
             user_id=current_user.id,
@@ -122,8 +139,8 @@ def new_contract():
             payment_method=contrato.forma_pagamento,
             start_date=form_data["start_date"],
             end_date=form_data.get("end_date", ""),
-            docx_path=docx_path,
-            pdf_path=pdf_path,
+            docx_data=docx_data,
+            pdf_data=pdf_data,
         )
         db.session.add(record)
         db.session.commit()
@@ -165,7 +182,7 @@ def view_contract(contract_id: int):
     if record.user_id != current_user.id:
         abort(403)
 
-    if not record.pdf_path or not os.path.exists(record.pdf_path):
+    if not record.has_pdf:
         flash("PDF não disponível para este contrato.", "danger")
         return redirect(url_for("contracts.dashboard"))
 
@@ -179,6 +196,9 @@ def view_pdf(contract_id: int):
     if record.user_id != current_user.id:
         abort(403)
 
+    if record.pdf_data:
+        return _servir_bytes(record.pdf_data, f"contrato_{record.number}.pdf",
+                             "application/pdf", inline=True)
     if record.pdf_path and os.path.exists(record.pdf_path):
         return send_file(record.pdf_path, mimetype="application/pdf",
                          as_attachment=False,
@@ -195,12 +215,18 @@ def download_contract(contract_id: int, fmt: str):
     if record.user_id != current_user.id:
         abort(403)
 
-    if fmt == "docx" and record.docx_path and os.path.exists(record.docx_path):
-        return send_file(record.docx_path, as_attachment=True,
-                         download_name=f"contrato_{record.number}.docx")
-    if fmt == "pdf" and record.pdf_path and os.path.exists(record.pdf_path):
-        return send_file(record.pdf_path, as_attachment=True,
-                         download_name=f"contrato_{record.number}.pdf")
+    DOCX_MIME = ("application/vnd.openxmlformats-officedocument"
+                 ".wordprocessingml.document")
+    dados, caminho, mimetype = {
+        "docx": (record.docx_data, record.docx_path, DOCX_MIME),
+        "pdf": (record.pdf_data, record.pdf_path, "application/pdf"),
+    }.get(fmt, (None, None, None))
+
+    if dados:
+        return _servir_bytes(dados, f"contrato_{record.number}.{fmt}", mimetype)
+    if caminho and os.path.exists(caminho):
+        return send_file(caminho, as_attachment=True,
+                         download_name=f"contrato_{record.number}.{fmt}")
 
     flash("Arquivo não encontrado.", "danger")
     return redirect(url_for("contracts.dashboard"))
