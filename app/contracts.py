@@ -22,6 +22,29 @@ def _servir_bytes(dados: bytes, nome: str, mimetype: str, inline: bool = False):
                      as_attachment=not inline, download_name=nome)
 
 
+# Os campos declarados pelos templates chegam no POST com este prefixo, para
+# não colidirem com os nomes fixos do formulário.
+PREFIXO_EXTRA = "extra_"
+
+
+def _coletar_extras(tipo: str, form_data: dict, carregar_campos) -> dict:
+    """Lê os campos que o template do tipo declara e devolve-os formatados.
+
+    Um campo sem valor no POST cai no padrão do template — ou no campo que
+    ele indicar em ``padrao_de`` (ex: o foro assume a cidade do contratante).
+    Assim uma cláusula nunca fica com o placeholder cru no meio do texto.
+    """
+    extras = {}
+    for campo in carregar_campos(tipo):
+        bruto = form_data.get(f"{PREFIXO_EXTRA}{campo.nome}", "")
+        if str(bruto).strip() == "":
+            bruto = campo.padrao
+        if str(bruto).strip() == "" and campo.padrao_de:
+            bruto = form_data.get(campo.padrao_de, "")
+        extras[campo.nome] = campo.formatar(bruto)
+    return extras
+
+
 def _build_contrato(form_data: dict):
     import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -29,6 +52,7 @@ def _build_contrato(form_data: dict):
     from contract_generator.models.party import Parte, Endereco
     from contract_generator.models.contract import Contrato
     from contract_generator.models.clause import carregar_clausulas_padrao
+    from contract_generator.models.template import carregar_campos_extras
 
     def make_endereco(prefix):
         cep = form_data.get(f"{prefix}_cep", "")
@@ -64,6 +88,7 @@ def _build_contrato(form_data: dict):
 
     tipo = form_data["contract_type"]
     clausulas = carregar_clausulas_padrao(tipo)
+    extras = _coletar_extras(tipo, form_data, carregar_campos_extras)
 
     data_inicio = datetime.strptime(form_data["start_date"], "%Y-%m-%d").date()
     data_fim_str = form_data.get("end_date", "")
@@ -81,6 +106,7 @@ def _build_contrato(form_data: dict):
         valor=float(form_data["value"]),
         forma_pagamento=form_data["payment_method"],
         descricao_servico=form_data.get("description", ""),
+        extras=extras,
     )
 
 
@@ -94,6 +120,15 @@ def dashboard():
     return render_template("dashboard.html", contratos=contratos)
 
 
+def _campos_por_tipo() -> dict:
+    """Campos extras de cada tipo, para o formulário montar as seções."""
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    from contract_generator.models.template import campos_extras_por_tipo
+
+    return campos_extras_por_tipo()
+
+
 @contracts_bp.route("/contracts/new", methods=["GET", "POST"])
 @login_required
 def new_contract():
@@ -103,7 +138,8 @@ def new_contract():
             contrato = _build_contrato(form_data)
         except (ValueError, KeyError) as e:
             flash(f"Erro nos dados do contrato: {e}", "danger")
-            return render_template("new_contract.html", form_data=form_data)
+            return render_template("new_contract.html", form_data=form_data,
+                                   campos_por_tipo=_campos_por_tipo())
 
         uid = uuid.uuid4().hex[:8]
         base_path = os.path.join(OUTPUT_DIR, f"contrato_{uid}")
@@ -148,7 +184,8 @@ def new_contract():
         flash(f"Contrato nº {contrato.numero} gerado com sucesso!", "success")
         return redirect(url_for("contracts.dashboard"))
 
-    return render_template("new_contract.html", form_data={})
+    return render_template("new_contract.html", form_data={},
+                           campos_por_tipo=_campos_por_tipo())
 
 
 @contracts_bp.route("/api/cep/<cep>")

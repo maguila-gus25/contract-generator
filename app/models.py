@@ -58,7 +58,11 @@ class ContractRecord(db.Model):
         return bool(self.pdf_data or self.pdf_path)
 
     def type_label(self) -> str:
-        labels = {"servico": "Prestação de Serviços", "locacao": "Locação de Imóvel"}
+        labels = {
+            "servico": "Prestação de Serviços",
+            "locacao": "Locação de Imóvel",
+            "fotografia": "Produção Fotográfica",
+        }
         return labels.get(self.contract_type, self.contract_type)
 
     def __repr__(self) -> str:

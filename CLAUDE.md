@@ -4,14 +4,15 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-**Contract Generator** — Sistema web para geração de contratos jurídicos (Prestação de Serviços e Locação de Imóvel) em formatos DOCX e PDF, com autenticação de usuários, consulta de CEP/CNPJ e dashboard de histórico.
+**Contract Generator** — Sistema web para geração de contratos jurídicos (Prestação de Serviços, Locação de Imóvel e Produção Fotográfica) em formatos DOCX e PDF, com autenticação de usuários, consulta de CEP/CNPJ e dashboard de histórico.
 
 ## Tech Stack
 
 | Layer       | Technology                            |
 |-------------|---------------------------------------|
 | Backend     | Python 3 + Flask                      |
-| Database    | SQLite + Flask-SQLAlchemy             |
+| Database    | Flask-SQLAlchemy — SQLite (local) / Neon Postgres (produção) |
+| Deploy      | Vercel (serverless, preset `flask`)   |
 | Auth        | Flask-Login (sessão) + Werkzeug hash  |
 | Segurança   | Flask-WTF (CSRF) + Flask-Limiter (rate limit no login) |
 | DOCX        | python-docx                           |
@@ -40,13 +41,16 @@ contract-generator/
 │   ├── models/             # contract.py, party.py, clause.py
 │   ├── generators/         # base.py, docx_generator.py, pdf_generator.py
 │   ├── services/           # cep_service.py, cnpj_service.py (consultas externas)
-│   └── templates/          # locacao.json, servico.json (modelos de cláusulas)
+│   └── templates/          # locacao.json, servico.json, fotografia.json (cláusulas)
 ├── tests/                  # Suíte pytest (test_auth.py: isolamento + CRUD)
 ├── requirements.txt        # Deps de runtime
 ├── requirements-dev.txt    # Deps de dev (pytest, black, flake8, mypy)
 ├── pytest.ini
+├── vercel.json             # Deploy: preset `flask` (entrypoint = main.py)
+├── .vercelignore           # Exclui venv/tests/backend/frontend do bundle
+├── .python-version         # Runtime Python do Vercel (3.12)
 ├── .env                    # Secrets (never commit)
-└── docker-compose.yml      # Postgres (legado — não usado pelo app SQLite)
+└── docker-compose.yml      # Postgres (legado — não usado pelo app)
 ```
 
 ## Development Commands
@@ -86,10 +90,76 @@ carrega o `.env` se existir). Variáveis reconhecidas:
 - `SECRET_KEY` — assina as sessões. Se ausente, o app gera uma chave **efêmera**
   com `secrets.token_hex(32)` e loga um warning (as sessões caem a cada
   reinício). Defina em produção. Ver `.env.example`.
-- `DATABASE_URL` — URI do SQLAlchemy. Padrão: `sqlite:///contracts.db`.
+- `DATABASE_URL` — URI do SQLAlchemy. Padrão: `sqlite:///contracts.db`. Em
+  produção é injetada pela integração Neon; `_normalizar_database_url()` em
+  `app/__init__.py` converte `postgres://`/`postgresql://` para
+  `postgresql+psycopg://` (driver psycopg 3, exigido pelo SQLAlchemy 2.x).
 
 > O `docker-compose.yml` (Postgres) é legado do protótipo FastAPI e **não** é
-> usado pelo app SQLite atual.
+> usado nem pelo SQLite local nem pelo Neon em produção.
+
+## Deploy (Vercel)
+
+O app roda em https://contract-generator-lilac.vercel.app. O `vercel.json` usa o
+preset `flask`, que detecta o WSGI por `main.py` — **não** existe entrypoint em
+`api/` (uma tentativa anterior com `api/index.py` + `rewrites` causou 404 em
+todas as rotas, porque o builder monta a função na raiz).
+
+Deploy automático pela integração GitHub: merge na `main` publica em produção,
+cada PR gera um preview. Manualmente: `vercel deploy --prod`.
+
+### Implicações do runtime serverless
+
+Filesystem somente-leitura, com `/tmp` efêmero e não compartilhado entre
+instâncias. Ao mexer em geração de arquivos ou persistência, respeite:
+
+- **Nada de gravar arquivo para ler depois.** Os DOCX/PDF vivem no banco
+  (`ContractRecord.docx_data` / `pdf_data`, `LargeBinary`) e são servidos de
+  memória via `BytesIO`. `OUTPUT_DIR` aponta para `/tmp` só como área de
+  passagem — o arquivo é lido e removido na mesma requisição.
+- Os campos legados `docx_path`/`pdf_path` só atendem registros antigos; use
+  as properties `has_docx`/`has_pdf` para checar disponibilidade.
+- `_migrar_colunas_de_arquivo()` adiciona as colunas de blob em bancos
+  pré-existentes, já que `db.create_all()` não altera tabelas criadas.
+- Sem `SECRET_KEY` no ambiente, cada instância gera a sua e as sessões quebram
+  de forma intermitente — não só a cada restart.
+
+### Templates de contrato
+
+Cada tipo é um JSON em `contract_generator/templates/<tipo>.json`, lido por
+`models/template.py`. Dois formatos são aceitos:
+
+- **lista de cláusulas** (original — `servico.json`, `locacao.json`);
+- **objeto** com `campos` e `clausulas` (`fotografia.json`).
+
+`campos` declara os parâmetros que variam por contrato mas não existem no
+formulário padrão — horas contratadas, entrada, prazos, multas. Cada campo
+vira um input na seção "Condições do Contrato" (renderizada por
+`static/js/contract_fields.js`, que mostra só a do tipo selecionado e
+desabilita as demais para não irem no POST) e um placeholder utilizável
+pelas cláusulas daquele tipo.
+
+```json
+{"nome": "multa_penal", "label": "Multa por descumprimento (%)",
+ "tipo": "percentual", "padrao": "25", "ajuda": "...",
+ "padrao_de": "contratante_cidade"}
+```
+
+- `tipo`: `texto`, `numero`, `inteiro`, `moeda` ou `percentual` — define a
+  formatação aplicada antes de entrar no texto (`450` → `R$ 450,00`).
+- `padrao`: usado quando o campo vem vazio no POST.
+- `padrao_de`: nome de um campo do formulário padrão usado como último
+  recurso (ex.: o foro assume a cidade do contratante).
+
+Os valores chegam ao documento via `Contrato(extras={...})`, que
+`to_dict()` mescla — os campos do núcleo têm precedência, então um template
+não consegue sobrescrever `valor` ou `contratante_nome`.
+
+**Ao criar um tipo novo:** adicione o JSON, o rótulo em `TIPOS_LABEL`
+(`generators/base.py`), o rótulo em `ContractRecord.type_label()`
+(`app/models.py`) e a `<option>` em `new_contract.html`. Todo placeholder
+usado nas cláusulas precisa existir como campo declarado ou como chave de
+`Contrato.to_dict()` — há teste cobrindo isso em `tests/test_templates.py`.
 
 ## Code Conventions
 
