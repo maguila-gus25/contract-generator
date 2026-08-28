@@ -124,6 +124,43 @@ instâncias. Ao mexer em geração de arquivos ou persistência, respeite:
 - Sem `SECRET_KEY` no ambiente, cada instância gera a sua e as sessões quebram
   de forma intermitente — não só a cada restart.
 
+### Templates de contrato
+
+Cada tipo é um JSON em `contract_generator/templates/<tipo>.json`, lido por
+`models/template.py`. Dois formatos são aceitos:
+
+- **lista de cláusulas** (original — `servico.json`, `locacao.json`);
+- **objeto** com `campos` e `clausulas` (`fotografia.json`).
+
+`campos` declara os parâmetros que variam por contrato mas não existem no
+formulário padrão — horas contratadas, entrada, prazos, multas. Cada campo
+vira um input na seção "Condições do Contrato" (renderizada por
+`static/js/contract_fields.js`, que mostra só a do tipo selecionado e
+desabilita as demais para não irem no POST) e um placeholder utilizável
+pelas cláusulas daquele tipo.
+
+```json
+{"nome": "multa_penal", "label": "Multa por descumprimento (%)",
+ "tipo": "percentual", "padrao": "25", "ajuda": "...",
+ "padrao_de": "contratante_cidade"}
+```
+
+- `tipo`: `texto`, `numero`, `inteiro`, `moeda` ou `percentual` — define a
+  formatação aplicada antes de entrar no texto (`450` → `R$ 450,00`).
+- `padrao`: usado quando o campo vem vazio no POST.
+- `padrao_de`: nome de um campo do formulário padrão usado como último
+  recurso (ex.: o foro assume a cidade do contratante).
+
+Os valores chegam ao documento via `Contrato(extras={...})`, que
+`to_dict()` mescla — os campos do núcleo têm precedência, então um template
+não consegue sobrescrever `valor` ou `contratante_nome`.
+
+**Ao criar um tipo novo:** adicione o JSON, o rótulo em `TIPOS_LABEL`
+(`generators/base.py`), o rótulo em `ContractRecord.type_label()`
+(`app/models.py`) e a `<option>` em `new_contract.html`. Todo placeholder
+usado nas cláusulas precisa existir como campo declarado ou como chave de
+`Contrato.to_dict()` — há teste cobrindo isso em `tests/test_templates.py`.
+
 ## Code Conventions
 
 - Rotas organizadas em blueprints Flask: `auth_bp` (`app/auth.py`) e
