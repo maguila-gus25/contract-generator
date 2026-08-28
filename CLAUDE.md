@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-**Contract Generator** — Sistema web para geração de contratos jurídicos (Prestação de Serviços e Locação de Imóvel) em formatos DOCX e PDF, com autenticação de usuários, consulta de CEP/CNPJ e dashboard de histórico.
+**Contract Generator** — Sistema web para geração de contratos jurídicos (Prestação de Serviços, Locação de Imóvel e Produção Fotográfica) em formatos DOCX e PDF, com autenticação de usuários, consulta de CEP/CNPJ e dashboard de histórico.
 
 ## Tech Stack
 
@@ -41,7 +41,7 @@ contract-generator/
 │   ├── models/             # contract.py, party.py, clause.py
 │   ├── generators/         # base.py, docx_generator.py, pdf_generator.py
 │   ├── services/           # cep_service.py, cnpj_service.py (consultas externas)
-│   └── templates/          # locacao.json, servico.json (modelos de cláusulas)
+│   └── templates/          # locacao.json, servico.json, fotografia.json (cláusulas)
 ├── tests/                  # Suíte pytest (test_auth.py: isolamento + CRUD)
 ├── requirements.txt        # Deps de runtime
 ├── requirements-dev.txt    # Deps de dev (pytest, black, flake8, mypy)

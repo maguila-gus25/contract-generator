@@ -8,7 +8,7 @@ Gerador de contratos jurídicos em formato DOCX e PDF, com interface web, autent
 
 ## Sobre o Projeto
 
-Projeto desenvolvido em Python como parte do portfólio pessoal. O sistema permite que usuários cadastrados gerem contratos de **Prestação de Serviços** e **Locação de Imóvel**, com download nos formatos `.docx` e `.pdf`, de forma simples e rápida via navegador.
+Projeto desenvolvido em Python como parte do portfólio pessoal. O sistema permite que usuários cadastrados gerem contratos de **Prestação de Serviços**, **Locação de Imóvel** e **Produção Fotográfica**, com download nos formatos `.docx` e `.pdf`, de forma simples e rápida via navegador.
 
 ---
 
@@ -16,7 +16,7 @@ Projeto desenvolvido em Python como parte do portfólio pessoal. O sistema permi
 
 - Autenticação de usuários (cadastro, login, logout)
 - **Gerenciamento de conta:** editar perfil, trocar senha e excluir a própria conta
-- Geração de contratos de Prestação de Serviços e Locação de Imóvel
+- Geração de contratos de Prestação de Serviços, Locação de Imóvel e Produção Fotográfica
 - Download do contrato nos formatos **.docx** e **.pdf**
 - Visualização do PDF inline no navegador
 - **Assinatura digital:** botão que baixa o PDF e abre o portal [Assina UFSC](https://assina.ufsc.br) para assinar com certificado ICP-Brasil, gov.br ou idUFSC
@@ -136,7 +136,8 @@ contract-generator/
 │   │   └── cnpj_service.py       # Consulta de CNPJ via ReceitaWS
 │   └── templates/
 │       ├── servico.json          # Cláusulas do contrato de serviços
-│       └── locacao.json          # Cláusulas do contrato de locação
+│       ├── locacao.json          # Cláusulas do contrato de locação
+│       └── fotografia.json       # Cláusulas do contrato de produção fotográfica
 │
 ├── tests/                        # Testes automatizados
 ├── main.py                       # Ponto de entrada (e entrypoint do Vercel)
