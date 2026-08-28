@@ -1,5 +1,5 @@
 from fpdf import FPDF
-from .base import GeradorBase
+from .base import GeradorBase, rotulo_tipo
 
 
 class PdfGenerator(GeradorBase):
@@ -27,7 +27,7 @@ class PdfGenerator(GeradorBase):
 
     def _adicionar_cabecalho(self, pdf: FPDF, contrato) -> None:
         dados = contrato.to_dict()
-        tipo_label = "PRESTACAO DE SERVICOS" if contrato.tipo == "servico" else "LOCACAO DE IMOVEL"
+        tipo_label = rotulo_tipo(contrato.tipo, sem_acento=True)
         self._linha(pdf, f"CONTRATO DE {tipo_label}", altura=10, bold=True, size=15, align="C")
         pdf.ln(2)
         pdf.set_font("Helvetica", size=10)

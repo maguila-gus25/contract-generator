@@ -29,6 +29,9 @@
             <option value="locacao" {% if form_data.get('contract_type')=='locacao' %}selected{% endif %}>
               Locação de Imóvel
             </option>
+            <option value="fotografia" {% if form_data.get('contract_type')=='fotografia' %}selected{% endif %}>
+              Produção Fotográfica
+            </option>
           </select>
         </div>
         <div class="col-md-4">
@@ -61,7 +64,7 @@
           <small class="text-muted">Deixe vazio para prazo indeterminado</small>
         </div>
         <div class="col-12">
-          <label class="form-label fw-semibold">Descrição do Serviço / Imóvel <span class="text-danger">*</span></label>
+          <label class="form-label fw-semibold">Descrição do Serviço / Imóvel / Ensaio <span class="text-danger">*</span></label>
           <textarea name="description" class="form-control" rows="3"
                     placeholder="Descreva o objeto do contrato..."
                     required>{{ form_data.get('description', '') }}</textarea>

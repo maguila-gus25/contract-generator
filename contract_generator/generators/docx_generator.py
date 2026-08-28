@@ -1,7 +1,7 @@
 from docx import Document
 from docx.shared import Pt, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from .base import GeradorBase
+from .base import GeradorBase, rotulo_tipo
 
 
 class DocxGenerator(GeradorBase):
@@ -26,7 +26,7 @@ class DocxGenerator(GeradorBase):
 
     def _adicionar_cabecalho(self, doc: Document, contrato) -> None:
         dados = contrato.to_dict()
-        tipo_label = "PRESTAÇÃO DE SERVIÇOS" if contrato.tipo == "servico" else "LOCAÇÃO DE IMÓVEL"
+        tipo_label = rotulo_tipo(contrato.tipo)
         titulo = doc.add_heading(f"CONTRATO DE {tipo_label}", level=1)
         titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
