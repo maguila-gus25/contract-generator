@@ -73,6 +73,33 @@
     </div>
   </div>
 
+  <!-- Parâmetros específicos do tipo de contrato (declarados no template) -->
+  {% for tipo, campos in campos_por_tipo.items() if campos %}
+  <div class="card border-0 shadow-sm mb-4 campos-do-tipo" data-tipo="{{ tipo }}" hidden>
+    <div class="card-header section-secondary fw-semibold">
+      <i class="bi bi-sliders me-2"></i>Condições do Contrato
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        {% for campo in campos %}
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">{{ campo.label }}</label>
+          <input type="{{ 'number' if campo.tipo in ('numero', 'inteiro', 'moeda', 'percentual') else 'text' }}"
+                 name="extra_{{ campo.nome }}"
+                 class="form-control"
+                 data-campo="{{ campo.nome }}"
+                 {% if campo.tipo in ('moeda', 'numero', 'percentual') %}step="0.01"{% endif %}
+                 {% if campo.tipo in ('numero', 'inteiro', 'moeda', 'percentual') %}min="0"{% endif %}
+                 disabled
+                 value="{{ form_data.get('extra_' ~ campo.nome, campo.padrao) }}">
+          {% if campo.ajuda %}<small class="text-muted">{{ campo.ajuda }}</small>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
   <!-- Contratante -->
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-header section-secondary fw-semibold">
@@ -236,4 +263,5 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/cep.js') }}"></script>
+<script src="{{ url_for('static', filename='js/contract_fields.js') }}"></script>
 {% endblock %}

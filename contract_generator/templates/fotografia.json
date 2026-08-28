@@ -1,62 +1,136 @@
-[
-  {
-    "numero": 1,
-    "titulo": "DAS DEFINIÇÕES",
-    "conteudo": "Para fins de entendimento do presente contrato, estabelecem-se as seguintes definições: (a) Ensaio Fotográfico: sessão de fotos com direção artística, definindo-se por expressão artística a qual o CONTRATADO manifesta sua visão pessoal e artística das pessoas e locais dos quais as imagens são fotografadas; (b) Propriedade de imagem: detentor da imagem é a pessoa captada na imagem, e detentor dos direitos autorais é a pessoa que capta as imagens (fotógrafo); (c) Locação: local onde é realizado o ensaio fotográfico, podendo ser de acesso público (áreas públicas, tais como parques e praças) ou de acesso privado (áreas particulares, tais como estúdios ou escritórios).",
-    "obrigatoria": true
-  },
-  {
-    "numero": 2,
-    "titulo": "DO OBJETO",
-    "conteudo": "O presente contrato tem como objeto a realização de ensaio fotográfico, conforme descrito a seguir: {descricao_servico}. O ensaio será realizado no dia {data_inicio}. Parágrafo primeiro: as fotos decorrentes do presente ensaio serão tratadas e entregues digitalmente, em galeria online disponibilizada pelo CONTRATADO. Parágrafo segundo: a locação para realização do ensaio é de responsabilidade do CONTRATANTE, devendo tratar-se de local público ou, tratando-se de área particular, somente com a devida autorização do proprietário do espaço será realizado o ensaio.",
-    "obrigatoria": true
-  },
-  {
-    "numero": 3,
-    "titulo": "DO PREÇO",
-    "conteudo": "Pelos serviços prestados, fica acordado o pagamento da importância de {valor}, na forma de pagamento: {forma_pagamento}. O CONTRATADO reserva-se ao direito de não entregar o serviço até que o saldo seja quitado.",
-    "obrigatoria": true
-  },
-  {
-    "numero": 4,
-    "titulo": "DO PRAZO DE ENTREGA",
-    "conteudo": "As fotos serão entregues ao CONTRATANTE no prazo de 20 (vinte) dias úteis, contados a partir do dia do ensaio. O CONTRATADO reserva-se ao direito de deletar os arquivos do CONTRATANTE após 20 (vinte) dias da entrega do trabalho finalizado. Desta forma, o CONTRATANTE não poderá solicitar novas cópias dos arquivos digitais.",
-    "obrigatoria": true
-  },
-  {
-    "numero": 5,
-    "titulo": "DO FIGURINO, LOCAÇÃO E UTENSÍLIOS",
-    "conteudo": "Será de responsabilidade do CONTRATANTE a escolha e os meios de obtenção do figurino e dos utensílios a serem utilizados. Será igualmente de responsabilidade do CONTRATANTE a escolha e as eventuais despesas com a locação, bem como a obtenção de autorização em caso de locação particular.",
-    "obrigatoria": true
-  },
-  {
-    "numero": 6,
-    "titulo": "DAS HIPÓTESES DE CANCELAMENTO",
-    "conteudo": "Poderá o contrato ser cancelado pelo CONTRATANTE, observado o seguinte: (a) até 28 (vinte e oito) dias antes da data do ensaio, com o pagamento de multa de 15% sobre o valor do contrato; (b) até 21 (vinte e um) dias antes da data do ensaio, com o pagamento de 25% sobre o valor do contrato; (c) até 7 (sete) dias antes da data do ensaio, com o pagamento de 45% sobre o valor do contrato. Na ocorrência de caso fortuito ou força maior, poderá ser realizado o reagendamento do ensaio em data conveniente para ambas as partes, sem incidência de multa. Em caso de mau tempo, o ensaio poderá ser reagendado sem custos adicionais. Poderá o CONTRATADO cancelar o contrato mediante a devolução dos valores já pagos e a indicação de profissional substituto para a data do ensaio, não se responsabilizando pela contratação do substituto nem pelo valor por este cobrado.",
-    "obrigatoria": true
-  },
-  {
-    "numero": 7,
-    "titulo": "DO DIREITO DE IMAGEM",
-    "conteudo": "O CONTRATANTE autoriza o uso de sua imagem pelo CONTRATADO, a título gratuito, exclusivamente para fins de portfólio profissional, em meios online (site e redes sociais), materiais digitais (PDF de orçamento) ou impressos. O uso das imagens será feito de forma cuidadosa e ética, respeitando a privacidade, os valores pessoais e o contexto do evento, ficando vedada a utilização de imagens que possam gerar constrangimento ou exposição indevida. Caso necessário, as imagens destinadas à divulgação poderão ser previamente alinhadas entre as partes, a fim de garantir conforto e adequação ao uso.",
-    "obrigatoria": true
-  },
-  {
-    "numero": 8,
-    "titulo": "DO DIREITO AUTORAL",
-    "conteudo": "O CONTRATANTE poderá usar as fotos, que representam obras do CONTRATADO, sempre com a atribuição dos créditos autorais, consoante preceitua a Lei de Direitos Autorais (Lei 9.610/98). Fica proibida a edição das imagens, a aplicação de filtros ou quaisquer outras alterações do material, com exceção das feitas ou autorizadas pelo CONTRATADO.",
-    "obrigatoria": true
-  },
-  {
-    "numero": 9,
-    "titulo": "DA CLÁUSULA PENAL",
-    "conteudo": "O descumprimento do presente contrato permitirá à parte lesada o direito de cobrar multa no valor de 25% do valor do contrato por infração.",
-    "obrigatoria": true
-  },
-  {
-    "numero": 10,
-    "titulo": "DO FORO DE ELEIÇÃO",
-    "conteudo": "Elegem as partes o foro da comarca de {contratante_endereco}, com exclusão de qualquer outro, por mais privilegiado que seja, para dirimir eventuais litígios porventura oriundos do presente contrato. E, por acharem em perfeito acordo em tudo quanto neste instrumento particular foi lavrado, obrigam-se as partes a cumprir o presente contrato, assinando-o em duas vias de igual teor.",
-    "obrigatoria": true
-  }
-]
+{
+  "campos": [
+    {
+      "nome": "duracao_horas",
+      "label": "Duração do ensaio (horas)",
+      "tipo": "numero",
+      "padrao": "2",
+      "ajuda": "Horas de trabalho contratadas para o ensaio."
+    },
+    {
+      "nome": "valor_entrada",
+      "label": "Entrada / sinal (R$)",
+      "tipo": "moeda",
+      "ajuda": "Pago na assinatura. Sugerido automaticamente como 50% do valor."
+    },
+    {
+      "nome": "valor_saldo",
+      "label": "Saldo restante (R$)",
+      "tipo": "moeda",
+      "ajuda": "Pago no dia do ensaio. Calculado como valor total menos a entrada."
+    },
+    {
+      "nome": "plataforma_entrega",
+      "label": "Plataforma de entrega das fotos",
+      "tipo": "texto",
+      "padrao": "PIXIESET",
+      "ajuda": "Galeria online onde as fotos tratadas serão disponibilizadas."
+    },
+    {
+      "nome": "prazo_entrega_dias",
+      "label": "Prazo de entrega (dias úteis)",
+      "tipo": "inteiro",
+      "padrao": "20"
+    },
+    {
+      "nome": "prazo_retencao_dias",
+      "label": "Retenção dos arquivos após a entrega (dias)",
+      "tipo": "inteiro",
+      "padrao": "20",
+      "ajuda": "Após esse prazo o CONTRATADO pode deletar os arquivos."
+    },
+    {
+      "nome": "multa_cancelamento_28",
+      "label": "Multa de cancelamento até 28 dias antes (%)",
+      "tipo": "percentual",
+      "padrao": "15"
+    },
+    {
+      "nome": "multa_cancelamento_21",
+      "label": "Multa de cancelamento até 21 dias antes (%)",
+      "tipo": "percentual",
+      "padrao": "25"
+    },
+    {
+      "nome": "multa_cancelamento_7",
+      "label": "Multa de cancelamento até 7 dias antes (%)",
+      "tipo": "percentual",
+      "padrao": "45"
+    },
+    {
+      "nome": "multa_penal",
+      "label": "Multa por descumprimento do contrato (%)",
+      "tipo": "percentual",
+      "padrao": "25"
+    },
+    {
+      "nome": "foro_comarca",
+      "label": "Comarca do foro de eleição",
+      "tipo": "texto",
+      "ajuda": "Se vazio, usa a cidade do contratante.",
+      "padrao_de": "contratante_cidade"
+    }
+  ],
+  "clausulas": [
+    {
+      "numero": 1,
+      "titulo": "DAS DEFINIÇÕES",
+      "conteudo": "Para fins de entendimento do presente contrato, estabelecem-se as seguintes definições: (a) Ensaio Fotográfico: sessão de fotos com direção artística, definindo-se por expressão artística a qual o CONTRATADO manifesta sua visão pessoal e artística das pessoas e locais dos quais as imagens são fotografadas; (b) Propriedade de imagem: detentor da imagem é a pessoa captada na imagem, e detentor dos direitos autorais é a pessoa que capta as imagens (fotógrafo); (c) Locação: local onde é realizado o ensaio fotográfico, podendo ser de acesso público (áreas públicas, tais como parques e praças) ou de acesso privado (áreas particulares, tais como estúdios ou escritórios).",
+      "obrigatoria": true
+    },
+    {
+      "numero": 2,
+      "titulo": "DO OBJETO",
+      "conteudo": "O presente contrato tem como objeto a realização de ensaio fotográfico, com duração de {duracao_horas} horas, a ser realizado no dia {data_inicio}, conforme descrito a seguir: {descricao_servico}. Parágrafo primeiro: as fotos decorrentes do presente ensaio serão tratadas e entregues digitalmente via {plataforma_entrega}. Parágrafo segundo: a locação para realização do ensaio é de responsabilidade do CONTRATANTE, devendo tratar-se de local público ou, tratando-se de área particular, somente com a devida autorização do proprietário do espaço será realizado o ensaio.",
+      "obrigatoria": true
+    },
+    {
+      "numero": 3,
+      "titulo": "DO PREÇO",
+      "conteudo": "Pelos serviços prestados, fica acordado o pagamento da importância de {valor}, sendo {valor_entrada} a título de entrada, no dia da assinatura deste contrato, e o saldo de {valor_saldo} no dia do ensaio. Forma de pagamento: {forma_pagamento}. O CONTRATADO reserva-se ao direito de não entregar o serviço até que o saldo seja quitado.",
+      "obrigatoria": true
+    },
+    {
+      "numero": 4,
+      "titulo": "DO PRAZO DE ENTREGA",
+      "conteudo": "As fotos serão entregues ao CONTRATANTE no prazo de {prazo_entrega_dias} dias úteis, contados a partir do dia do ensaio. O CONTRATADO reserva-se ao direito de deletar os arquivos do CONTRATANTE após {prazo_retencao_dias} dias da entrega do trabalho finalizado. Desta forma, o CONTRATANTE não poderá solicitar novas cópias dos arquivos digitais.",
+      "obrigatoria": true
+    },
+    {
+      "numero": 5,
+      "titulo": "DO FIGURINO, LOCAÇÃO E UTENSÍLIOS",
+      "conteudo": "Será de responsabilidade do CONTRATANTE a escolha e os meios de obtenção do figurino e dos utensílios a serem utilizados. Será igualmente de responsabilidade do CONTRATANTE a escolha e as eventuais despesas com a locação, bem como a obtenção de autorização em caso de locação particular.",
+      "obrigatoria": true
+    },
+    {
+      "numero": 6,
+      "titulo": "DAS HIPÓTESES DE CANCELAMENTO",
+      "conteudo": "Poderá o contrato ser cancelado pelo CONTRATANTE, observado o seguinte: (a) até 28 (vinte e oito) dias antes da data do ensaio, com o pagamento de multa de {multa_cancelamento_28} sobre o valor do contrato; (b) até 21 (vinte e um) dias antes da data do ensaio, com o pagamento de {multa_cancelamento_21} sobre o valor do contrato; (c) até 7 (sete) dias antes da data do ensaio, com o pagamento de {multa_cancelamento_7} sobre o valor do contrato. Na ocorrência de caso fortuito ou força maior, poderá ser realizado o reagendamento do ensaio em data conveniente para ambas as partes, sem incidência de multa. Em caso de mau tempo, o ensaio poderá ser reagendado sem custos adicionais. Poderá o CONTRATADO cancelar o contrato mediante a devolução dos valores já pagos e a indicação de profissional substituto para a data do ensaio, não se responsabilizando pela contratação do substituto nem pelo valor por este cobrado.",
+      "obrigatoria": true
+    },
+    {
+      "numero": 7,
+      "titulo": "DO DIREITO DE IMAGEM",
+      "conteudo": "O CONTRATANTE autoriza o uso de sua imagem pelo CONTRATADO, a título gratuito, exclusivamente para fins de portfólio profissional, em meios online (site e redes sociais), materiais digitais (PDF de orçamento) ou impressos. O uso das imagens será feito de forma cuidadosa e ética, respeitando a privacidade, os valores pessoais e o contexto do evento, ficando vedada a utilização de imagens que possam gerar constrangimento ou exposição indevida. Caso necessário, as imagens destinadas à divulgação poderão ser previamente alinhadas entre as partes, a fim de garantir conforto e adequação ao uso.",
+      "obrigatoria": true
+    },
+    {
+      "numero": 8,
+      "titulo": "DO DIREITO AUTORAL",
+      "conteudo": "O CONTRATANTE poderá usar as fotos, que representam obras do CONTRATADO, sempre com a atribuição dos créditos autorais, consoante preceitua a Lei de Direitos Autorais (Lei 9.610/98). Fica proibida a edição das imagens, a aplicação de filtros ou quaisquer outras alterações do material, com exceção das feitas ou autorizadas pelo CONTRATADO.",
+      "obrigatoria": true
+    },
+    {
+      "numero": 9,
+      "titulo": "DA CLÁUSULA PENAL",
+      "conteudo": "O descumprimento do presente contrato permitirá à parte lesada o direito de cobrar multa no valor de {multa_penal} do valor do contrato por infração.",
+      "obrigatoria": true
+    },
+    {
+      "numero": 10,
+      "titulo": "DO FORO DE ELEIÇÃO",
+      "conteudo": "Elegem as partes o foro da comarca de {foro_comarca}, com exclusão de qualquer outro, por mais privilegiado que seja, para dirimir eventuais litígios porventura oriundos do presente contrato. E, por acharem em perfeito acordo em tudo quanto neste instrumento particular foi lavrado, obrigam-se as partes a cumprir o presente contrato, assinando-o em duas vias de igual teor.",
+      "obrigatoria": true
+    }
+  ]
+}
