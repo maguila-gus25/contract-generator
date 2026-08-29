@@ -51,6 +51,38 @@ def test_registro_rejeita_senha_fraca(client, app):
         assert User.query.filter_by(email="fraco@exemplo.com").first() is None
 
 
+def test_formulario_de_registro_anuncia_requisitos_da_senha(client):
+    html = client.get("/register").get_data(as_text=True)
+    # O texto do formulário deve refletir a regra real (8 caracteres), não 6.
+    assert "Mínimo 8 caracteres" in html
+    assert "Mínimo 6 caracteres" not in html
+
+
+def test_registro_reporta_todos_os_requisitos_de_senha_de_uma_vez(client):
+    """'12345678' falha em 'ter letra'; senha curta sem letra falha em duas."""
+    resp = client.post("/register", data={
+        "name": "Multi",
+        "email": "multi@exemplo.com",
+        "password": "1234",
+        "confirm_password": "1234",
+    }, follow_redirects=True)
+    html = resp.get_data(as_text=True)
+    assert "pelo menos 8 caracteres" in html
+    assert "pelo menos uma letra" in html
+
+
+def test_registro_repopula_nome_e_email_quando_falha(client):
+    resp = client.post("/register", data={
+        "name": "Ana Repopula",
+        "email": "repopula@exemplo.com",
+        "password": "123",
+        "confirm_password": "123",
+    }, follow_redirects=True)
+    html = resp.get_data(as_text=True)
+    assert "Ana Repopula" in html
+    assert "repopula@exemplo.com" in html
+
+
 # --- Isolamento entre usuários (IDOR) -------------------------------------
 
 def test_usuario_nao_acessa_contrato_de_outro(client, app):
