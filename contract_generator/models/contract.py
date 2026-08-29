@@ -39,6 +39,11 @@ class Contrato:
             raise ValueError("Contratado deve ser uma instância de Parte.")
         if self.valor < 0:
             raise ValueError("Valor do contrato não pode ser negativo.")
+        if (self.data_inicio and self.data_fim
+                and self.data_fim < self.data_inicio):
+            raise ValueError(
+                "A data de fim não pode ser anterior à data de início."
+            )
         if not self.clausulas:
             raise ValueError("O contrato deve ter pelo menos uma cláusula.")
 
@@ -56,7 +61,7 @@ class Contrato:
             "contratante_documento": self.contratante.documento_formatado(),
             "contratante_tipo_documento": self.contratante.tipo_documento,
             "contratante_email": self.contratante.email,
-            "contratante_telefone": self.contratante.telefone,
+            "contratante_telefone": self.contratante.telefone_formatado(),
             "contratante_endereco": end_contratante,
             "contratante_cidade": (self.contratante.endereco.cidade
                                    if self.contratante.endereco else ""),
@@ -64,7 +69,7 @@ class Contrato:
             "contratado_documento": self.contratado.documento_formatado(),
             "contratado_tipo_documento": self.contratado.tipo_documento,
             "contratado_email": self.contratado.email,
-            "contratado_telefone": self.contratado.telefone,
+            "contratado_telefone": self.contratado.telefone_formatado(),
             "contratado_endereco": end_contratado,
             "contratado_cidade": (self.contratado.endereco.cidade
                                   if self.contratado.endereco else ""),
