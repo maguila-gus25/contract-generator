@@ -3,6 +3,7 @@
 
 {% block content %}
 {% set errors = errors|default({}) %}
+{% set numero_sugerido = numero_sugerido|default('') %}
 <div class="d-flex align-items-center gap-2 mb-4">
   <a href="{{ url_for('contracts.dashboard') }}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-left"></i>
@@ -36,10 +37,11 @@
           </select>
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Número do Contrato <span class="text-danger">*</span></label>
+          <label class="form-label fw-semibold">Número do Contrato</label>
           <input type="text" name="number" class="form-control"
-                 placeholder="ex: 001/2024"
-                 value="{{ form_data.get('number', '') }}" required>
+                 placeholder="{{ numero_sugerido or 'ex: 001/2026' }}"
+                 value="{{ form_data.get('number', numero_sugerido) }}">
+          <small class="text-muted">Gerado automaticamente — você pode alterar.</small>
         </div>
         <div class="col-md-4">
           <label class="form-label fw-semibold">Valor (R$) <span class="text-danger">*</span></label>
@@ -134,61 +136,77 @@
           <div class="invalid-feedback">{{ errors['contratante_documento'] }}</div>
           {% endif %}
         </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">E-mail</label>
-          <input type="email" name="contratante_email" class="form-control"
-                 value="{{ form_data.get('contratante_email', '') }}">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Telefone</label>
-          <input type="text" name="contratante_telefone"
-                 class="form-control{% if errors.get('contratante_telefone') %} is-invalid{% endif %}"
-                 placeholder="(00) 00000-0000"
-                 value="{{ form_data.get('contratante_telefone', '') }}">
-          {% if errors.get('contratante_telefone') %}
-          <div class="invalid-feedback">{{ errors['contratante_telefone'] }}</div>
-          {% endif %}
-        </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">CEP</label>
-          <input type="text" name="contratante_cep"
-                 class="form-control{% if errors.get('contratante_cep') %} is-invalid{% endif %}"
-                 placeholder="00000-000"
-                 value="{{ form_data.get('contratante_cep', '') }}">
-          {% if errors.get('contratante_cep') %}
-          <div class="invalid-feedback">{{ errors['contratante_cep'] }}</div>
-          {% endif %}
-        </div>
-        <div class="col-md-5">
-          <label class="form-label fw-semibold">Logradouro</label>
-          <input type="text" name="contratante_logradouro" class="form-control"
-                 value="{{ form_data.get('contratante_logradouro', '') }}">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label fw-semibold">Número</label>
-          <input type="text" name="contratante_numero" class="form-control"
-                 value="{{ form_data.get('contratante_numero', '') }}">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label fw-semibold">Bairro</label>
-          <input type="text" name="contratante_bairro" class="form-control"
-                 value="{{ form_data.get('contratante_bairro', '') }}">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Cidade</label>
-          <input type="text" name="contratante_cidade" class="form-control"
-                 value="{{ form_data.get('contratante_cidade', '') }}">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label fw-semibold">Estado</label>
-          <input type="text" name="contratante_estado" class="form-control"
-                 placeholder="SP" maxlength="2"
-                 value="{{ form_data.get('contratante_estado', '') }}">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Complemento</label>
-          <input type="text" name="contratante_complemento" class="form-control"
-                 value="{{ form_data.get('contratante_complemento', '') }}">
+      </div>
+
+      {% set c_extra = form_data.get('contratante_email') or form_data.get('contratante_telefone')
+         or form_data.get('contratante_cep') or form_data.get('contratante_logradouro')
+         or form_data.get('contratante_numero') or form_data.get('contratante_bairro')
+         or form_data.get('contratante_cidade') or form_data.get('contratante_estado')
+         or form_data.get('contratante_complemento')
+         or errors.get('contratante_telefone') or errors.get('contratante_cep') %}
+      <button class="btn btn-sm btn-link text-decoration-none px-0 mt-2" type="button"
+              data-bs-toggle="collapse" data-bs-target="#extra-contratante"
+              aria-expanded="{{ 'true' if c_extra else 'false' }}">
+        <i class="bi bi-plus-circle me-1"></i>Contato e endereço (opcional)
+      </button>
+      <div class="collapse{% if c_extra %} show{% endif %}" id="extra-contratante">
+        <div class="row g-3 mt-0">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">E-mail</label>
+            <input type="email" name="contratante_email" class="form-control"
+                   value="{{ form_data.get('contratante_email', '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Telefone</label>
+            <input type="text" name="contratante_telefone"
+                   class="form-control{% if errors.get('contratante_telefone') %} is-invalid{% endif %}"
+                   placeholder="(00) 00000-0000"
+                   value="{{ form_data.get('contratante_telefone', '') }}">
+            {% if errors.get('contratante_telefone') %}
+            <div class="invalid-feedback">{{ errors['contratante_telefone'] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">CEP</label>
+            <input type="text" name="contratante_cep"
+                   class="form-control{% if errors.get('contratante_cep') %} is-invalid{% endif %}"
+                   placeholder="00000-000"
+                   value="{{ form_data.get('contratante_cep', '') }}">
+            {% if errors.get('contratante_cep') %}
+            <div class="invalid-feedback">{{ errors['contratante_cep'] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-5">
+            <label class="form-label fw-semibold">Logradouro</label>
+            <input type="text" name="contratante_logradouro" class="form-control"
+                   value="{{ form_data.get('contratante_logradouro', '') }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Número</label>
+            <input type="text" name="contratante_numero" class="form-control"
+                   value="{{ form_data.get('contratante_numero', '') }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Bairro</label>
+            <input type="text" name="contratante_bairro" class="form-control"
+                   value="{{ form_data.get('contratante_bairro', '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Cidade</label>
+            <input type="text" name="contratante_cidade" class="form-control"
+                   value="{{ form_data.get('contratante_cidade', '') }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Estado</label>
+            <input type="text" name="contratante_estado" class="form-control"
+                   placeholder="SP" maxlength="2"
+                   value="{{ form_data.get('contratante_estado', '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Complemento</label>
+            <input type="text" name="contratante_complemento" class="form-control"
+                   value="{{ form_data.get('contratante_complemento', '') }}">
+          </div>
         </div>
       </div>
     </div>
@@ -223,61 +241,77 @@
           <div class="invalid-feedback">{{ errors['contratado_documento'] }}</div>
           {% endif %}
         </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">E-mail</label>
-          <input type="email" name="contratado_email" class="form-control"
-                 value="{{ form_data.get('contratado_email', '') }}">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Telefone</label>
-          <input type="text" name="contratado_telefone"
-                 class="form-control{% if errors.get('contratado_telefone') %} is-invalid{% endif %}"
-                 placeholder="(00) 00000-0000"
-                 value="{{ form_data.get('contratado_telefone', '') }}">
-          {% if errors.get('contratado_telefone') %}
-          <div class="invalid-feedback">{{ errors['contratado_telefone'] }}</div>
-          {% endif %}
-        </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">CEP</label>
-          <input type="text" name="contratado_cep"
-                 class="form-control{% if errors.get('contratado_cep') %} is-invalid{% endif %}"
-                 placeholder="00000-000"
-                 value="{{ form_data.get('contratado_cep', '') }}">
-          {% if errors.get('contratado_cep') %}
-          <div class="invalid-feedback">{{ errors['contratado_cep'] }}</div>
-          {% endif %}
-        </div>
-        <div class="col-md-5">
-          <label class="form-label fw-semibold">Logradouro</label>
-          <input type="text" name="contratado_logradouro" class="form-control"
-                 value="{{ form_data.get('contratado_logradouro', '') }}">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label fw-semibold">Número</label>
-          <input type="text" name="contratado_numero" class="form-control"
-                 value="{{ form_data.get('contratado_numero', '') }}">
-        </div>
-        <div class="col-md-3">
-          <label class="form-label fw-semibold">Bairro</label>
-          <input type="text" name="contratado_bairro" class="form-control"
-                 value="{{ form_data.get('contratado_bairro', '') }}">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Cidade</label>
-          <input type="text" name="contratado_cidade" class="form-control"
-                 value="{{ form_data.get('contratado_cidade', '') }}">
-        </div>
-        <div class="col-md-2">
-          <label class="form-label fw-semibold">Estado</label>
-          <input type="text" name="contratado_estado" class="form-control"
-                 placeholder="SC" maxlength="2"
-                 value="{{ form_data.get('contratado_estado', '') }}">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label fw-semibold">Complemento</label>
-          <input type="text" name="contratado_complemento" class="form-control"
-                 value="{{ form_data.get('contratado_complemento', '') }}">
+      </div>
+
+      {% set d_extra = form_data.get('contratado_email') or form_data.get('contratado_telefone')
+         or form_data.get('contratado_cep') or form_data.get('contratado_logradouro')
+         or form_data.get('contratado_numero') or form_data.get('contratado_bairro')
+         or form_data.get('contratado_cidade') or form_data.get('contratado_estado')
+         or form_data.get('contratado_complemento')
+         or errors.get('contratado_telefone') or errors.get('contratado_cep') %}
+      <button class="btn btn-sm btn-link text-decoration-none px-0 mt-2" type="button"
+              data-bs-toggle="collapse" data-bs-target="#extra-contratado"
+              aria-expanded="{{ 'true' if d_extra else 'false' }}">
+        <i class="bi bi-plus-circle me-1"></i>Contato e endereço (opcional)
+      </button>
+      <div class="collapse{% if d_extra %} show{% endif %}" id="extra-contratado">
+        <div class="row g-3 mt-0">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">E-mail</label>
+            <input type="email" name="contratado_email" class="form-control"
+                   value="{{ form_data.get('contratado_email', '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Telefone</label>
+            <input type="text" name="contratado_telefone"
+                   class="form-control{% if errors.get('contratado_telefone') %} is-invalid{% endif %}"
+                   placeholder="(00) 00000-0000"
+                   value="{{ form_data.get('contratado_telefone', '') }}">
+            {% if errors.get('contratado_telefone') %}
+            <div class="invalid-feedback">{{ errors['contratado_telefone'] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">CEP</label>
+            <input type="text" name="contratado_cep"
+                   class="form-control{% if errors.get('contratado_cep') %} is-invalid{% endif %}"
+                   placeholder="00000-000"
+                   value="{{ form_data.get('contratado_cep', '') }}">
+            {% if errors.get('contratado_cep') %}
+            <div class="invalid-feedback">{{ errors['contratado_cep'] }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-5">
+            <label class="form-label fw-semibold">Logradouro</label>
+            <input type="text" name="contratado_logradouro" class="form-control"
+                   value="{{ form_data.get('contratado_logradouro', '') }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Número</label>
+            <input type="text" name="contratado_numero" class="form-control"
+                   value="{{ form_data.get('contratado_numero', '') }}">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Bairro</label>
+            <input type="text" name="contratado_bairro" class="form-control"
+                   value="{{ form_data.get('contratado_bairro', '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Cidade</label>
+            <input type="text" name="contratado_cidade" class="form-control"
+                   value="{{ form_data.get('contratado_cidade', '') }}">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Estado</label>
+            <input type="text" name="contratado_estado" class="form-control"
+                   placeholder="SC" maxlength="2"
+                   value="{{ form_data.get('contratado_estado', '') }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Complemento</label>
+            <input type="text" name="contratado_complemento" class="form-control"
+                   value="{{ form_data.get('contratado_complemento', '') }}">
+          </div>
         </div>
       </div>
     </div>
