@@ -2,6 +2,7 @@
 {% block title %}Novo Contrato — Contract Generator{% endblock %}
 
 {% block content %}
+{% set errors = errors|default({}) %}
 <div class="d-flex align-items-center gap-2 mb-4">
   <a href="{{ url_for('contracts.dashboard') }}" class="btn btn-outline-secondary btn-sm">
     <i class="bi bi-arrow-left"></i>
@@ -59,8 +60,12 @@
         </div>
         <div class="col-md-4">
           <label class="form-label fw-semibold">Data de Fim</label>
-          <input type="date" name="end_date" class="form-control"
+          <input type="date" name="end_date"
+                 class="form-control{% if errors.get('end_date') %} is-invalid{% endif %}"
                  value="{{ form_data.get('end_date', '') }}">
+          {% if errors.get('end_date') %}
+          <div class="invalid-feedback">{{ errors['end_date'] }}</div>
+          {% endif %}
           <small class="text-muted">Deixe vazio para prazo indeterminado</small>
         </div>
         <div class="col-12">
@@ -121,9 +126,13 @@
         </div>
         <div class="col-md-3">
           <label class="form-label fw-semibold">Documento <span class="text-danger">*</span></label>
-          <input type="text" name="contratante_documento" class="form-control"
+          <input type="text" name="contratante_documento"
+                 class="form-control{% if errors.get('contratante_documento') %} is-invalid{% endif %}"
                  placeholder="Somente números"
                  value="{{ form_data.get('contratante_documento', '') }}" required>
+          {% if errors.get('contratante_documento') %}
+          <div class="invalid-feedback">{{ errors['contratante_documento'] }}</div>
+          {% endif %}
         </div>
         <div class="col-md-4">
           <label class="form-label fw-semibold">E-mail</label>
@@ -132,14 +141,23 @@
         </div>
         <div class="col-md-4">
           <label class="form-label fw-semibold">Telefone</label>
-          <input type="text" name="contratante_telefone" class="form-control"
+          <input type="text" name="contratante_telefone"
+                 class="form-control{% if errors.get('contratante_telefone') %} is-invalid{% endif %}"
+                 placeholder="(00) 00000-0000"
                  value="{{ form_data.get('contratante_telefone', '') }}">
+          {% if errors.get('contratante_telefone') %}
+          <div class="invalid-feedback">{{ errors['contratante_telefone'] }}</div>
+          {% endif %}
         </div>
         <div class="col-md-4">
           <label class="form-label fw-semibold">CEP</label>
-          <input type="text" name="contratante_cep" class="form-control"
+          <input type="text" name="contratante_cep"
+                 class="form-control{% if errors.get('contratante_cep') %} is-invalid{% endif %}"
                  placeholder="00000-000"
                  value="{{ form_data.get('contratante_cep', '') }}">
+          {% if errors.get('contratante_cep') %}
+          <div class="invalid-feedback">{{ errors['contratante_cep'] }}</div>
+          {% endif %}
         </div>
         <div class="col-md-5">
           <label class="form-label fw-semibold">Logradouro</label>
@@ -197,9 +215,13 @@
         </div>
         <div class="col-md-3">
           <label class="form-label fw-semibold">Documento <span class="text-danger">*</span></label>
-          <input type="text" name="contratado_documento" class="form-control"
+          <input type="text" name="contratado_documento"
+                 class="form-control{% if errors.get('contratado_documento') %} is-invalid{% endif %}"
                  placeholder="Somente números"
                  value="{{ form_data.get('contratado_documento', '') }}" required>
+          {% if errors.get('contratado_documento') %}
+          <div class="invalid-feedback">{{ errors['contratado_documento'] }}</div>
+          {% endif %}
         </div>
         <div class="col-md-4">
           <label class="form-label fw-semibold">E-mail</label>
@@ -208,14 +230,23 @@
         </div>
         <div class="col-md-4">
           <label class="form-label fw-semibold">Telefone</label>
-          <input type="text" name="contratado_telefone" class="form-control"
+          <input type="text" name="contratado_telefone"
+                 class="form-control{% if errors.get('contratado_telefone') %} is-invalid{% endif %}"
+                 placeholder="(00) 00000-0000"
                  value="{{ form_data.get('contratado_telefone', '') }}">
+          {% if errors.get('contratado_telefone') %}
+          <div class="invalid-feedback">{{ errors['contratado_telefone'] }}</div>
+          {% endif %}
         </div>
         <div class="col-md-4">
           <label class="form-label fw-semibold">CEP</label>
-          <input type="text" name="contratado_cep" class="form-control"
+          <input type="text" name="contratado_cep"
+                 class="form-control{% if errors.get('contratado_cep') %} is-invalid{% endif %}"
                  placeholder="00000-000"
                  value="{{ form_data.get('contratado_cep', '') }}">
+          {% if errors.get('contratado_cep') %}
+          <div class="invalid-feedback">{{ errors['contratado_cep'] }}</div>
+          {% endif %}
         </div>
         <div class="col-md-5">
           <label class="form-label fw-semibold">Logradouro</label>
