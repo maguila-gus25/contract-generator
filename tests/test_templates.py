@@ -184,3 +184,25 @@ def test_vigencia_invertida_no_formulario_e_reportada(client, app):
     dados = dict(DADOS_BASE, start_date="2026-12-01", end_date="2026-01-01")
     resp = client.post("/contracts/new", data=dados, follow_redirects=True)
     assert "anterior à data de início" in resp.get_data(as_text=True)
+
+
+def test_numero_em_branco_e_gerado_automaticamente(client, app):
+    from datetime import date
+    from app.models import ContractRecord
+
+    registrar(client)
+    dados = dict(DADOS_BASE)
+    dados.pop("number")
+    client.post("/contracts/new", data=dados, follow_redirects=True)
+
+    with app.app_context():
+        registros = ContractRecord.query.all()
+        assert len(registros) == 1
+        assert registros[0].number == f"001/{date.today().year}"
+
+
+def test_formulario_sugere_proximo_numero(client, app):
+    registrar(client)
+    html = client.get("/contracts/new").get_data(as_text=True)
+    from datetime import date
+    assert f"001/{date.today().year}" in html

@@ -150,6 +150,25 @@ def _build_contrato(form_data: dict):
     )
 
 
+def _proximo_numero(user_id: int) -> str:
+    """Sugere o próximo número sequencial do usuário no ano: ``001/2026``.
+
+    Baseia-se nos números já usados que seguem o padrão ``NNN/AAAA`` do ano
+    corrente; o usuário ainda pode sobrescrever no formulário.
+    """
+    ano = date.today().year
+    sufixo = f"/{ano}"
+    seqs = []
+    for registro in ContractRecord.query.filter_by(user_id=user_id).all():
+        numero = registro.number or ""
+        if numero.endswith(sufixo):
+            prefixo = numero[: -len(sufixo)]
+            if prefixo.isdigit():
+                seqs.append(int(prefixo))
+    proximo = (max(seqs) + 1) if seqs else 1
+    return f"{proximo:03d}/{ano}"
+
+
 @contracts_bp.route("/")
 @login_required
 def dashboard():
@@ -174,6 +193,9 @@ def _campos_por_tipo() -> dict:
 def new_contract():
     if request.method == "POST":
         form_data = request.form.to_dict()
+        # Número é opcional no formulário: se vier vazio, geramos um sequencial.
+        if not form_data.get("number", "").strip():
+            form_data["number"] = _proximo_numero(current_user.id)
 
         erros = _validar_form(form_data)
         if erros:
@@ -233,7 +255,8 @@ def new_contract():
         return redirect(url_for("contracts.dashboard"))
 
     return render_template("new_contract.html", form_data={},
-                           campos_por_tipo=_campos_por_tipo())
+                           campos_por_tipo=_campos_por_tipo(),
+                           numero_sugerido=_proximo_numero(current_user.id))
 
 
 @contracts_bp.route("/api/cep/<cep>")
