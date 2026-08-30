@@ -1,5 +1,8 @@
 import re
 
+from .validators import (validar_documento, validar_telefone, validar_cep,
+                         formatar_telefone, formatar_cep)
+
 
 class Endereco:
     def __init__(self, cep: str, logradouro: str, numero: str, complemento: str,
@@ -17,7 +20,7 @@ class Endereco:
         if self.complemento:
             partes.append(self.complemento)
         partes.append(f"{self.bairro} - {self.cidade}/{self.estado}")
-        partes.append(f"CEP: {self.cep}")
+        partes.append(f"CEP: {formatar_cep(self.cep)}")
         return ", ".join(partes)
 
     def __repr__(self) -> str:
@@ -40,8 +43,19 @@ class Parte:
             raise ValueError("Nome da parte deve ser uma string não vazia.")
         if self.tipo_documento not in ("CPF", "CNPJ"):
             raise ValueError("Tipo de documento deve ser 'CPF' ou 'CNPJ'.")
+        if not validar_documento(self.documento, self.tipo_documento):
+            raise ValueError(
+                f"{self.tipo_documento} inválido: '{self.documento}'."
+            )
         if self.email and not re.match(r"[^@]+@[^@]+\.[^@]+", self.email):
             raise ValueError(f"E-mail inválido: {self.email}")
+        if self.telefone and not validar_telefone(self.telefone):
+            raise ValueError(f"Telefone inválido: '{self.telefone}'.")
+        if self.endereco and self.endereco.cep and not validar_cep(self.endereco.cep):
+            raise ValueError(f"CEP inválido: '{self.endereco.cep}'.")
+
+    def telefone_formatado(self) -> str:
+        return formatar_telefone(self.telefone) if self.telefone else ""
 
     def documento_formatado(self) -> str:
         doc = re.sub(r"\D", "", self.documento)

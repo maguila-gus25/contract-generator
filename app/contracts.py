@@ -45,6 +45,46 @@ def _coletar_extras(tipo: str, form_data: dict, carregar_campos) -> dict:
     return extras
 
 
+def _validar_form(form_data: dict) -> dict:
+    """Valida os campos do POST e devolve ``{campo: mensagem}`` com os erros.
+
+    Roda antes de montar o Contrato para reportar todos os problemas de uma
+    vez, junto ao campo, em vez do ``flash`` genérico. O domínio (``Parte``,
+    ``Contrato``) ainda rejeita dados inválidos — aqui só damos a mensagem
+    amigável por campo (ver issue #14).
+    """
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    from contract_generator.models.validators import (
+        validar_documento, validar_telefone, validar_cep)
+
+    erros = {}
+    for prefixo in ("contratante", "contratado"):
+        tipo = form_data.get(f"{prefixo}_tipo_documento", "CPF")
+        doc = form_data.get(f"{prefixo}_documento", "").strip()
+        if doc and not validar_documento(doc, tipo):
+            erros[f"{prefixo}_documento"] = (
+                f"{tipo} inválido. Confira os dígitos."
+            )
+        tel = form_data.get(f"{prefixo}_telefone", "").strip()
+        if tel and not validar_telefone(tel):
+            erros[f"{prefixo}_telefone"] = (
+                "Telefone inválido. Informe DDD + número."
+            )
+        cep = form_data.get(f"{prefixo}_cep", "").strip()
+        if cep and not validar_cep(cep):
+            erros[f"{prefixo}_cep"] = "CEP inválido. Deve ter 8 dígitos."
+
+    inicio = form_data.get("start_date", "")
+    fim = form_data.get("end_date", "")
+    # As datas chegam em ISO (YYYY-MM-DD), então a ordem lexical é cronológica.
+    if inicio and fim and fim < inicio:
+        erros["end_date"] = (
+            "A data de fim não pode ser anterior à data de início."
+        )
+    return erros
+
+
 def _build_contrato(form_data: dict):
     import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -110,6 +150,25 @@ def _build_contrato(form_data: dict):
     )
 
 
+def _proximo_numero(user_id: int) -> str:
+    """Sugere o próximo número sequencial do usuário no ano: ``001/2026``.
+
+    Baseia-se nos números já usados que seguem o padrão ``NNN/AAAA`` do ano
+    corrente; o usuário ainda pode sobrescrever no formulário.
+    """
+    ano = date.today().year
+    sufixo = f"/{ano}"
+    seqs = []
+    for registro in ContractRecord.query.filter_by(user_id=user_id).all():
+        numero = registro.number or ""
+        if numero.endswith(sufixo):
+            prefixo = numero[: -len(sufixo)]
+            if prefixo.isdigit():
+                seqs.append(int(prefixo))
+    proximo = (max(seqs) + 1) if seqs else 1
+    return f"{proximo:03d}/{ano}"
+
+
 @contracts_bp.route("/")
 @login_required
 def dashboard():
@@ -134,6 +193,17 @@ def _campos_por_tipo() -> dict:
 def new_contract():
     if request.method == "POST":
         form_data = request.form.to_dict()
+        # Número é opcional no formulário: se vier vazio, geramos um sequencial.
+        if not form_data.get("number", "").strip():
+            form_data["number"] = _proximo_numero(current_user.id)
+
+        erros = _validar_form(form_data)
+        if erros:
+            flash("Corrija os campos destacados abaixo.", "danger")
+            return render_template("new_contract.html", form_data=form_data,
+                                   campos_por_tipo=_campos_por_tipo(),
+                                   errors=erros)
+
         try:
             contrato = _build_contrato(form_data)
         except (ValueError, KeyError) as e:
@@ -185,7 +255,8 @@ def new_contract():
         return redirect(url_for("contracts.dashboard"))
 
     return render_template("new_contract.html", form_data={},
-                           campos_por_tipo=_campos_por_tipo())
+                           campos_por_tipo=_campos_por_tipo(),
+                           numero_sugerido=_proximo_numero(current_user.id))
 
 
 @contracts_bp.route("/api/cep/<cep>")
