@@ -35,29 +35,61 @@ def _normalizar_database_url(url: str) -> str:
     return url
 
 
-def _migrar_colunas_de_arquivo(app) -> None:
-    """Adiciona as colunas de blob em bancos criados antes da migração.
+# Colunas adicionadas depois que a tabela já existia em produção. Cada entrada
+# é `tabela: {coluna: tipo SQL}`. O tipo é o mesmo em SQLite e Postgres,
+# exceto o binário — daí o marcador BINARIO, trocado conforme o dialeto.
+COLUNAS_ADICIONADAS = {
+    "contracts": {
+        "docx_data": "BINARIO",
+        "pdf_data": "BINARIO",
+    },
+    "users": {
+        "contratado_nome": "VARCHAR(200)",
+        "contratado_documento": "VARCHAR(30)",
+        "contratado_tipo_documento": "VARCHAR(4)",
+        "contratado_email": "VARCHAR(120)",
+        "contratado_telefone": "VARCHAR(30)",
+        "contratado_cep": "VARCHAR(10)",
+        "contratado_logradouro": "VARCHAR(200)",
+        "contratado_numero": "VARCHAR(20)",
+        "contratado_complemento": "VARCHAR(100)",
+        "contratado_bairro": "VARCHAR(100)",
+        "contratado_cidade": "VARCHAR(100)",
+        "contratado_estado": "VARCHAR(2)",
+    },
+}
 
-    `db.create_all()` só cria tabelas que não existem — não altera as que já
-    existem. Sem isso, um `contracts.db` antigo quebraria toda query em
-    `ContractRecord` por causa das colunas novas.
+
+def _migrar_colunas(tabela: str, colunas: dict) -> None:
+    """Adiciona em `tabela` as colunas que ainda não existem.
+
+    `db.create_all()` só cria tabelas que faltam — não altera as que já
+    existem. Sem isso, um banco anterior à mudança quebraria toda query no
+    modelo por causa das colunas novas.
     """
     from sqlalchemy import inspect, text
 
     inspector = inspect(db.engine)
-    if "contracts" not in inspector.get_table_names():
+    if tabela not in inspector.get_table_names():
         return
 
-    existentes = {col["name"] for col in inspector.get_columns("contracts")}
-    faltantes = {"docx_data", "pdf_data"} - existentes
+    existentes = {col["name"] for col in inspector.get_columns(tabela)}
+    faltantes = {nome: tipo for nome, tipo in colunas.items()
+                 if nome not in existentes}
     if not faltantes:
         return
 
-    tipo = "BYTEA" if db.engine.dialect.name == "postgresql" else "BLOB"
+    binario = "BYTEA" if db.engine.dialect.name == "postgresql" else "BLOB"
     with db.engine.begin() as conn:
-        for coluna in sorted(faltantes):
-            conn.execute(text(f"ALTER TABLE contracts ADD COLUMN {coluna} {tipo}"))
-    logger.info("Colunas adicionadas em `contracts`: %s", ", ".join(sorted(faltantes)))
+        for nome in sorted(faltantes):
+            tipo = faltantes[nome].replace("BINARIO", binario)
+            conn.execute(text(f"ALTER TABLE {tabela} ADD COLUMN {nome} {tipo}"))
+    logger.info("Colunas adicionadas em `%s`: %s", tabela, ", ".join(sorted(faltantes)))
+
+
+def _migrar_esquema() -> None:
+    for tabela, colunas in COLUNAS_ADICIONADAS.items():
+        _migrar_colunas(tabela, colunas)
 
 
 def create_app(test_config: dict | None = None):
@@ -105,15 +137,17 @@ def create_app(test_config: dict | None = None):
     login_manager.login_message_category = "warning"
 
     from .auth import auth_bp
+    from .clients import clients_bp
     from .contracts import contracts_bp
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(clients_bp)
     app.register_blueprint(contracts_bp)
 
     with app.app_context():
         try:
             db.create_all()
-            _migrar_colunas_de_arquivo(app)
+            _migrar_esquema()
         except Exception:
             # Uma falha transitória do banco não pode derrubar o processo
             # inteiro no cold start; as rotas devolvem o erro por requisição.
