@@ -1,10 +1,17 @@
 // Autocompleta o endereço a partir do CEP (ViaCEP via endpoint /api/cep).
-// Funciona para os dois blocos do formulário: contratante e contratado.
+// Serve os blocos prefixados do formulário de contrato (contratante,
+// contratado) e o formulário de cliente, cujos campos não têm prefixo.
 (function () {
   "use strict";
 
+  function nomeDoCampo(prefixo, campo) {
+    return prefixo ? prefixo + "_" + campo : campo;
+  }
+
   function preencher(prefixo) {
-    var campoCep = document.querySelector('input[name="' + prefixo + '_cep"]');
+    var campoCep = document.querySelector(
+      'input[name="' + nomeDoCampo(prefixo, "cep") + '"]'
+    );
     if (!campoCep) {
       return;
     }
@@ -34,14 +41,14 @@
           };
           Object.keys(mapa).forEach(function (campo) {
             var input = document.querySelector(
-              'input[name="' + prefixo + "_" + campo + '"]'
+              'input[name="' + nomeDoCampo(prefixo, campo) + '"]'
             );
             if (input && mapa[campo]) {
               input.value = mapa[campo];
             }
           });
           var numero = document.querySelector(
-            'input[name="' + prefixo + '_numero"]'
+            'input[name="' + nomeDoCampo(prefixo, "numero") + '"]'
           );
           if (numero) {
             numero.focus();
@@ -57,6 +64,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    ["contratante", "contratado"].forEach(preencher);
+    ["contratante", "contratado", ""].forEach(preencher);
   });
 })();

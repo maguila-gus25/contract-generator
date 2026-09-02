@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Clientes — Contract Generator{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-2 mb-4">
+  <a href="{{ url_for('contracts.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+  <div>
+    <h3 class="fw-bold mb-0">Clientes</h3>
+    <p class="text-muted small mb-0">
+      Quem você já contratou entra aqui sozinho ao gerar um contrato.
+    </p>
+  </div>
+</div>
+
+{% if clientes %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Nome</th>
+          <th>Documento</th>
+          <th class="d-none d-md-table-cell">Contato</th>
+          <th class="d-none d-lg-table-cell">Cidade</th>
+          <th class="text-end">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cliente in clientes %}
+        <tr>
+          <td class="fw-semibold">{{ cliente.nome }}</td>
+          <td class="small text-muted">
+            {{ cliente.tipo_documento }} {{ cliente.documento }}
+          </td>
+          <td class="small text-muted d-none d-md-table-cell">
+            {{ cliente.email or cliente.telefone or '—' }}
+          </td>
+          <td class="small text-muted d-none d-lg-table-cell">
+            {{ cliente.cidade or '—' }}
+          </td>
+          <td class="text-end">
+            <div class="d-inline-flex gap-2">
+              <a href="{{ url_for('clients.editar', client_id=cliente.id) }}"
+                 class="btn btn-outline-primary btn-sm" title="Editar cliente">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="POST"
+                    action="{{ url_for('clients.excluir', client_id=cliente.id) }}"
+                    onsubmit="return confirm('Remover {{ cliente.nome }} da agenda? Os contratos já gerados não são afetados.')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm" title="Remover da agenda">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-people text-muted" style="font-size:4rem"></i>
+  <h5 class="mt-3 text-muted">Nenhum cliente na agenda</h5>
+  <p class="text-muted">O primeiro contrato que você gerar cadastra o cliente aqui.</p>
+  <a href="{{ url_for('contracts.new_contract') }}" class="btn btn-primary mt-2">
+    <i class="bi bi-plus-lg me-1"></i>Novo Contrato
+  </a>
+</div>
+{% endif %}
+{% endblock %}
