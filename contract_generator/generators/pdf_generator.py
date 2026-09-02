@@ -33,8 +33,7 @@ class PdfGenerator(GeradorBase):
         pdf.set_font("Helvetica", size=10)
         pdf.set_text_color(85, 85, 85)
         pdf.set_x(pdf.l_margin)
-        pdf.multi_cell(self._w(pdf), 7,
-                       f"Contrato no {dados['numero']}  |  Data: {dados['data_criacao']}",
+        pdf.multi_cell(self._w(pdf), 7, f"Data: {dados['data_criacao']}",
                        align="C")
         pdf.set_text_color(0, 0, 0)
         pdf.ln(8)

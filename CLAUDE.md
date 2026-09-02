@@ -32,11 +32,12 @@ contract-generator/
 ├── app/                    # Aplicação Flask (camada web)
 │   ├── __init__.py         # App factory: db, login_manager, csrf, limiter, blueprints
 │   ├── auth.py             # Blueprint auth (login/register/logout + conta self-service)
+│   ├── clients.py          # Blueprint agenda de clientes (listar/editar/excluir + upsert)
 │   ├── contracts.py        # Blueprint contratos (dashboard/new/download/delete + api/cep)
-│   ├── models.py           # Modelos Flask-SQLAlchemy (User, Contract)
-│   ├── templates/          # Jinja2: base, login, register, dashboard, new_contract, account*
+│   ├── models.py           # Modelos Flask-SQLAlchemy (User, ContractRecord, Client)
+│   ├── templates/          # Jinja2: base, login, register, dashboard, new_contract, account*, client*
 │   ├── static/css/         # Estilos
-│   └── static/js/          # cep.js (autocomplete de endereço)
+│   └── static/js/          # cep.js (endereço), clients.js (agenda), contract_fields.js
 ├── contract_generator/     # Biblioteca de geração de contratos (domínio, sem Flask)
 │   ├── models/             # contract.py, party.py, clause.py
 │   ├── generators/         # base.py, docx_generator.py, pdf_generator.py
@@ -124,6 +125,30 @@ instâncias. Ao mexer em geração de arquivos ou persistência, respeite:
 - Sem `SECRET_KEY` no ambiente, cada instância gera a sua e as sessões quebram
   de forma intermitente — não só a cada restart.
 
+### De onde vêm as partes
+
+O formulário de contrato não pede mais os dados das partes a cada vez:
+
+- **Contratado** — vive no `User` (colunas `contratado_*`, todas nullable).
+  A seção só aparece no formulário enquanto `User.tem_perfil_contratado` é
+  falso; o primeiro contrato grava o perfil, e depois disso ele é editado em
+  `/account`. `_aplicar_perfil_contratado()` reinjeta os campos no POST.
+- **Contratante** — vem da agenda (`Client`), com `<select>` no topo da seção
+  preenchendo os campos via `static/js/clients.js`. Os campos continuam
+  editáveis: gerar o contrato faz upsert por `(user_id, documento)`, então
+  uma correção conserta o cadastro. Sem documento não há upsert.
+- Excluir um cliente **não** afeta contratos já gerados — o nome está copiado
+  em `ContractRecord.contractor_name`.
+
+`ContractRecord.number` continua `NOT NULL`, mas deixou de ser um input: recebe
+um valor derivado (`derivar_numero()` → `isabel-terra-2026-08-21`) que não
+aparece em tela nenhuma e serve só para nomear o arquivo baixado.
+
+Colunas adicionadas a tabelas que já existem em produção entram em
+`COLUNAS_ADICIONADAS` (`app/__init__.py`) e são aplicadas por
+`_migrar_esquema()` no cold start — `db.create_all()` não altera tabela
+existente.
+
 ### Templates de contrato
 
 Cada tipo é um JSON em `contract_generator/templates/<tipo>.json`, lido por
@@ -179,14 +204,21 @@ usado nas cláusulas precisa existir como campo declarado ou como chave de
 - `GET/POST /register` — cadastro (login automático após sucesso)
 - `GET /logout`
 - `GET/POST /account` — editar perfil (nome/e-mail)
+- `POST /account/contratado` — gravar o perfil de contratado da conta
 - `GET/POST /account/password` — trocar senha (exige a senha atual)
 - `POST /account/delete` — excluir a própria conta (cascade nos contratos)
+
+`clients_bp` (`app/clients.py`):
+- `GET /clientes` — agenda do usuário
+- `GET/POST /clientes/<id>/editar`
+- `POST /clientes/<id>/excluir` — sai da agenda; o histórico fica intacto
 
 `contracts_bp` (`app/contracts.py`):
 - `GET /` — dashboard (lista os contratos do `current_user`)
 - `GET/POST /contracts/new` — gerar contrato (DOCX/PDF)
 - `GET /contracts/<id>/view` e `/view/pdf` — visualização inline
-- `GET /contracts/<id>/download/<fmt>` — download (`docx`/`pdf`)
+- `GET /contracts/<id>/download/<fmt>` — download (`docx`/`pdf`), nomeado por
+  `ContractRecord.nome_do_arquivo()`
 - `POST /contracts/<id>/delete`
 - `GET /api/cep/<cep>` — JSON para autocomplete de endereço (usa `CepService`)
 

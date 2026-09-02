@@ -68,4 +68,90 @@
     </div>
   </div>
 </div>
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-header section-accent fw-semibold">
+    <i class="bi bi-briefcase me-2"></i>Dados de contratado
+  </div>
+  <div class="card-body">
+    <p class="text-muted small">
+      É com estes dados que você aparece como CONTRATADO nos contratos. Eles
+      são preenchidos no primeiro contrato e reaproveitados nos seguintes.
+    </p>
+    <form method="POST" action="{{ url_for('auth.account_contratado') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-semibold">Nome completo / Razão social <span class="text-danger">*</span></label>
+          <input type="text" name="contratado_nome" class="form-control" required
+                 value="{{ current_user.contratado_nome or '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Documento <span class="text-danger">*</span></label>
+          <input type="text" name="contratado_documento" class="form-control" required
+                 value="{{ current_user.contratado_documento or '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Tipo de documento</label>
+          <select name="contratado_tipo_documento" class="form-select">
+            <option value="CPF" {% if current_user.contratado_tipo_documento != 'CNPJ' %}selected{% endif %}>CPF</option>
+            <option value="CNPJ" {% if current_user.contratado_tipo_documento == 'CNPJ' %}selected{% endif %}>CNPJ</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">E-mail</label>
+          <input type="email" name="contratado_email" class="form-control"
+                 value="{{ current_user.contratado_email or '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Telefone</label>
+          <input type="text" name="contratado_telefone" class="form-control"
+                 value="{{ current_user.contratado_telefone or '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">CEP</label>
+          <input type="text" name="contratado_cep" class="form-control"
+                 value="{{ current_user.contratado_cep or '' }}">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">Logradouro</label>
+          <input type="text" name="contratado_logradouro" class="form-control"
+                 value="{{ current_user.contratado_logradouro or '' }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Número</label>
+          <input type="text" name="contratado_numero" class="form-control"
+                 value="{{ current_user.contratado_numero or '' }}">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">Complemento</label>
+          <input type="text" name="contratado_complemento" class="form-control"
+                 value="{{ current_user.contratado_complemento or '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-semibold">Bairro</label>
+          <input type="text" name="contratado_bairro" class="form-control"
+                 value="{{ current_user.contratado_bairro or '' }}">
+        </div>
+        <div class="col-md-5">
+          <label class="form-label fw-semibold">Cidade</label>
+          <input type="text" name="contratado_cidade" class="form-control"
+                 value="{{ current_user.contratado_cidade or '' }}">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-semibold">Estado</label>
+          <input type="text" name="contratado_estado" class="form-control" maxlength="2"
+                 value="{{ current_user.contratado_estado or '' }}">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-accent mt-3">
+        <i class="bi bi-check-lg me-1"></i>Salvar dados de contratado
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/cep.js') }}"></script>
 {% endblock %}
