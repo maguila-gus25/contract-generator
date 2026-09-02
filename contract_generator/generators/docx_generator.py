@@ -1,7 +1,25 @@
+"""Geração do DOCX do contrato.
+
+Acompanha o PDF na **estrutura** — sem número, qualificação em prosa,
+cláusulas em romano, itens em dois níveis, fecho com local, data e
+assinaturas — mas não no refino tipográfico: o DOCX existe para ser editado
+à mão, e um arquivo cheio de formatação manual atrapalha essa edição.
+"""
+
 from docx import Document
-from docx.shared import Pt, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Cm, Pt
+
+from ..models.formatters import data_por_extenso
 from .base import GeradorBase, rotulo_tipo
+
+# Recuo de um nível de hierarquia, em centímetros.
+RECUO = 0.8
+
+PREAMBULO = (
+    "As partes acima identificadas têm, entre si, justo e acertado o presente "
+    "Contrato, que se regerá pelas cláusulas e condições a seguir descritas."
+)
 
 
 class DocxGenerator(GeradorBase):
@@ -9,107 +27,86 @@ class DocxGenerator(GeradorBase):
         caminho = self._preparar_caminho(caminho_saida, "docx")
         doc = Document()
         self._aplicar_estilos(doc)
+
+        dados = contrato.to_dict()
         self._adicionar_cabecalho(doc, contrato)
         self._adicionar_qualificacao(doc, contrato)
-        self._adicionar_clausulas(doc, contrato)
-        self._adicionar_rodape(doc, contrato)
+        self._adicionar_clausulas(doc, contrato, dados)
+        self._adicionar_fecho(doc, contrato, dados)
+
         doc.save(caminho)
         return caminho
 
     def _aplicar_estilos(self, doc: Document) -> None:
         estilo = doc.styles["Normal"]
-        fonte = estilo.font
-        fonte.name = "Arial"
-        fonte.size = Pt(12)
+        estilo.font.name = "Arial"
+        estilo.font.size = Pt(11)
         paragrafo = estilo.paragraph_format
         paragrafo.space_after = Pt(6)
+        paragrafo.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+
+    def _paragrafo(self, doc: Document, texto: str, recuo: float = 0):
+        p = doc.add_paragraph(texto)
+        if recuo:
+            p.paragraph_format.left_indent = Cm(recuo)
+        return p
 
     def _adicionar_cabecalho(self, doc: Document, contrato) -> None:
-        dados = contrato.to_dict()
-        tipo_label = rotulo_tipo(contrato.tipo)
-        titulo = doc.add_heading(f"CONTRATO DE {tipo_label}", level=1)
+        titulo = doc.add_heading(f"CONTRATO DE {rotulo_tipo(contrato.tipo)}",
+                                 level=1)
         titulo.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(f"Data: {dados['data_criacao']}")
-        run.font.size = Pt(10)
-        run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
-
-        doc.add_paragraph()
-
     def _adicionar_qualificacao(self, doc: Document, contrato) -> None:
-        dados = contrato.to_dict()
-        doc.add_heading("PARTES", level=2)
+        for papel, parte in (("CONTRATANTE", contrato.contratante),
+                             ("CONTRATADO", contrato.contratado)):
+            p = doc.add_paragraph()
+            p.add_run(f"{papel}: ").bold = True
+            p.add_run(parte.qualificacao())
 
-        p = doc.add_paragraph()
-        p.add_run("CONTRATANTE: ").bold = True
-        p.add_run(
-            f"{dados['contratante_nome']}, {dados['contratante_tipo_documento']} "
-            f"nº {dados['contratante_documento']}"
-        )
-        if dados["contratante_endereco"]:
-            p.add_run(f", com endereço em {dados['contratante_endereco']}")
-        if dados["contratante_email"]:
-            p.add_run(f", e-mail: {dados['contratante_email']}")
-        p.add_run(".")
+        doc.add_paragraph(PREAMBULO)
 
-        p2 = doc.add_paragraph()
-        p2.add_run("CONTRATADO: ").bold = True
-        p2.add_run(
-            f"{dados['contratado_nome']}, {dados['contratado_tipo_documento']} "
-            f"nº {dados['contratado_documento']}"
-        )
-        if dados["contratado_endereco"]:
-            p2.add_run(f", com endereço em {dados['contratado_endereco']}")
-        if dados["contratado_email"]:
-            p2.add_run(f", e-mail: {dados['contratado_email']}")
-        p2.add_run(".")
-
-        doc.add_paragraph(
-            "As partes acima identificadas celebram o presente contrato, "
-            "que se regerá pelas cláusulas e condições a seguir:"
-        )
-        doc.add_paragraph()
-
-    def _adicionar_clausulas(self, doc: Document, contrato) -> None:
-        dados = contrato.to_dict()
-        doc.add_heading("CLÁUSULAS", level=2)
-
+    def _adicionar_clausulas(self, doc: Document, contrato, dados: dict) -> None:
         for clausula in contrato.clausulas:
-            conteudo = clausula.conteudo
-            try:
-                conteudo = conteudo.format(**dados)
-            except KeyError:
-                pass
-
-            p_titulo = doc.add_paragraph()
-            run = p_titulo.add_run(f"CLÁUSULA {clausula.numero}ª - {clausula.titulo.upper()}")
+            titulo = doc.add_paragraph()
+            run = titulo.add_run(clausula.cabecalho())
             run.bold = True
-            run.font.size = Pt(11)
 
-            doc.add_paragraph(conteudo)
+            self._paragrafo(doc, clausula.caput(dados))
 
-    def _adicionar_rodape(self, doc: Document, contrato) -> None:
-        dados = contrato.to_dict()
+            for rotulo, texto, subitens in clausula.itens_formatados(dados):
+                self._paragrafo(doc, f"{rotulo} {texto}", recuo=RECUO)
+                for sub_rotulo, sub_texto in subitens:
+                    self._paragrafo(doc, f"{sub_rotulo} {sub_texto}",
+                                    recuo=RECUO * 2)
+
+            for texto in clausula.desdobramentos_formatados(dados):
+                self._paragrafo(doc, texto, recuo=RECUO)
+
+    def _adicionar_fecho(self, doc: Document, contrato, dados: dict) -> None:
+        cidade = dados["contratado_cidade"] or dados["contratante_cidade"]
+        local_e_data = data_por_extenso(contrato.data_criacao)
+        if cidade:
+            local_e_data = f"{cidade}, {local_e_data}"
+
         doc.add_paragraph()
-        doc.add_paragraph(
-            f"Vigência: {dados['data_inicio']} a {dados['data_fim']}  |  "
-            f"Valor: {dados['valor']}  |  Pagamento: {dados['forma_pagamento']}"
+        p = doc.add_paragraph(local_e_data)
+        p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        doc.add_paragraph()
+
+        # Tabela sem bordas: só organiza as duas colunas de assinatura, com a
+        # linha desenhada por underscores para o documento continuar editável.
+        tabela = doc.add_table(rows=4, cols=2)
+        assinaturas = (
+            ("CONTRATANTE", dados["contratante_nome"],
+             f"{dados['contratante_tipo_documento']} "
+             f"{dados['contratante_documento']}"),
+            ("CONTRATADO", dados["contratado_nome"],
+             f"{dados['contratado_tipo_documento']} "
+             f"{dados['contratado_documento']}"),
         )
-
-        doc.add_paragraph()
-        doc.add_paragraph(f"___________________________________, {dados['data_criacao']}")
-        doc.add_paragraph()
-
-        tabela = doc.add_table(rows=3, cols=2)
-        tabela.style = "Table Grid"
-        tabela.cell(0, 0).text = "CONTRATANTE"
-        tabela.cell(0, 1).text = "CONTRATADO"
-        tabela.cell(1, 0).text = " " * 50
-        tabela.cell(1, 1).text = " " * 50
-        tabela.cell(2, 0).text = dados["contratante_nome"]
-        tabela.cell(2, 1).text = dados["contratado_nome"]
+        for coluna, (papel, nome, documento) in enumerate(assinaturas):
+            for linha, texto in enumerate(("_" * 34, nome, documento, papel)):
+                tabela.cell(linha, coluna).text = texto
 
         for row in tabela.rows:
             for cell in row.cells:
