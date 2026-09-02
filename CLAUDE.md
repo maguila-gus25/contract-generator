@@ -155,7 +155,7 @@ Cada tipo é um JSON em `contract_generator/templates/<tipo>.json`, lido por
 `models/template.py`. Dois formatos são aceitos:
 
 - **lista de cláusulas** (original — `servico.json`, `locacao.json`);
-- **objeto** com `campos` e `clausulas` (`fotografia.json`).
+- **objeto** com `campos`, `descricao_padrao` e `clausulas` (`fotografia.json`).
 
 `campos` declara os parâmetros que variam por contrato mas não existem no
 formulário padrão — horas contratadas, entrada, prazos, multas. Cada campo
@@ -176,9 +176,23 @@ pelas cláusulas daquele tipo.
 - `padrao_de`: nome de um campo do formulário padrão usado como último
   recurso (ex.: o foro assume a cidade do contratante).
 
+`descricao_padrao` pré-preenche a descrição do objeto quando o tipo é
+selecionado (`static/js/contract_fields.js`), sem sobrescrever o que o usuário
+já escreveu. O mesmo arquivo governa os campos fixos que mudam por tipo — data
+de fim, rótulo da data de início e forma de pagamento (lista de meios na
+fotografia, texto livre nos demais) — sempre escondendo **e** desabilitando o
+que não vale para o tipo, para não entrar no POST.
+
+Só entra em `campos` o que muda de contrato para contrato. Condição que é
+sempre a mesma (prazo de entrega, multa, plataforma, foro) vai cravada no
+texto da cláusula — a configuração por conta é a issue #16.
+
 Os valores chegam ao documento via `Contrato(extras={...})`, que
 `to_dict()` mescla — os campos do núcleo têm precedência, então um template
-não consegue sobrescrever `valor` ou `contratante_nome`.
+não consegue sobrescrever `valor` ou `contratante_nome`. Entre os derivados do
+núcleo estão `valor_metade_1` e `valor_metade_2`: a divisão do total em duas
+parcelas é feita em centavos, e a primeira absorve o centavo ímpar para o par
+sempre fechar com o valor do contrato.
 
 **Ao criar um tipo novo:** adicione o JSON, o rótulo em `TIPOS_LABEL`
 (`generators/base.py`), o rótulo em `ContractRecord.type_label()`
