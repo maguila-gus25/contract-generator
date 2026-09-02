@@ -35,12 +35,6 @@
           </select>
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Número do Contrato <span class="text-danger">*</span></label>
-          <input type="text" name="number" class="form-control"
-                 placeholder="ex: 001/2024"
-                 value="{{ form_data.get('number', '') }}" required>
-        </div>
-        <div class="col-md-4">
           <label class="form-label fw-semibold">Valor (R$) <span class="text-danger">*</span></label>
           <input type="number" name="value" class="form-control" step="0.01" min="0"
                  placeholder="5000.00"
@@ -106,6 +100,21 @@
       <i class="bi bi-person me-2"></i>Contratante (quem contrata)
     </div>
     <div class="card-body">
+      {% if clientes %}
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Cliente</label>
+        <select id="seletor-cliente" class="form-select">
+          <option value="">Novo cliente</option>
+          {% for cliente in clientes %}
+          <option value="{{ cliente.id }}">{{ cliente.nome }} — {{ cliente.documento }}</option>
+          {% endfor %}
+        </select>
+        <small class="text-muted">
+          Escolher um cliente preenche os campos abaixo; qualquer correção que
+          você fizer é salva na agenda ao gerar o contrato.
+        </small>
+      </div>
+      {% endif %}
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label fw-semibold">Nome completo / Razão social <span class="text-danger">*</span></label>
@@ -176,7 +185,16 @@
     </div>
   </div>
 
-  <!-- Contratado -->
+  <!-- Contratado: só é digitado enquanto a conta não tem perfil -->
+  {% if current_user.tem_perfil_contratado %}
+  <div class="alert alert-light border d-flex align-items-center gap-2 mb-4">
+    <i class="bi bi-briefcase"></i>
+    <span class="small">
+      Contratado: <strong>{{ current_user.contratado_nome }}</strong>
+      &middot; <a href="{{ url_for('auth.account') }}">editar em Minha conta</a>
+    </span>
+  </div>
+  {% else %}
   <div class="card border-0 shadow-sm mb-4">
     <div class="card-header section-accent fw-semibold">
       <i class="bi bi-briefcase me-2"></i>Contratado (quem presta o serviço)
@@ -251,6 +269,7 @@
       </div>
     </div>
   </div>
+  {% endif %}
 
   <div class="d-flex gap-2 justify-content-end mb-4">
     <a href="{{ url_for('contracts.dashboard') }}" class="btn btn-outline-primary">Cancelar</a>
@@ -262,6 +281,8 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="agenda-de-clientes" type="application/json">{{ clientes | tojson }}</script>
+<script src="{{ url_for('static', filename='js/clients.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cep.js') }}"></script>
 <script src="{{ url_for('static', filename='js/contract_fields.js') }}"></script>
 {% endblock %}

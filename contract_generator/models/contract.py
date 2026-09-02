@@ -5,12 +5,12 @@ from .formatters import formatar_moeda
 
 
 class Contrato:
-    def __init__(self, tipo: str, numero: str, data_criacao: date,
+    def __init__(self, tipo: str, data_criacao: date,
                  data_inicio: date, data_fim: date,
                  contratante: Parte, contratado: Parte,
                  clausulas: list, valor: float, forma_pagamento: str,
-                 descricao_servico: str = "", observacoes: str = "",
-                 extras: dict = None):
+                 numero: str = "", descricao_servico: str = "",
+                 observacoes: str = "", extras: dict = None):
         self.tipo = tipo
         self.numero = numero
         self.data_criacao = data_criacao
@@ -31,8 +31,6 @@ class Contrato:
     def validar(self) -> None:
         if not self.tipo or not self.tipo.strip():
             raise ValueError("Tipo do contrato é obrigatório.")
-        if not self.numero or not self.numero.strip():
-            raise ValueError("Número do contrato é obrigatório.")
         if not isinstance(self.contratante, Parte):
             raise ValueError("Contratante deve ser uma instância de Parte.")
         if not isinstance(self.contratado, Parte):

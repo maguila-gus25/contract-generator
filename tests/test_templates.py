@@ -107,7 +107,7 @@ import docx  # noqa: E402
 from .conftest import registrar  # noqa: E402
 
 DADOS_BASE = {
-    "contract_type": "fotografia", "number": "7/2026", "value": "900",
+    "contract_type": "fotografia", "value": "900",
     "payment_method": "PIX", "start_date": "2026-08-21", "end_date": "",
     "description": "Ensaio externo",
     "contratante_nome": "Maria", "contratante_tipo_documento": "CPF",

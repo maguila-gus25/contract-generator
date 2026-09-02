@@ -32,7 +32,7 @@ class DocxGenerator(GeradorBase):
 
         p = doc.add_paragraph()
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(f"Contrato nº {dados['numero']}  |  Data: {dados['data_criacao']}")
+        run = p.add_run(f"Data: {dados['data_criacao']}")
         run.font.size = Pt(10)
         run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
 

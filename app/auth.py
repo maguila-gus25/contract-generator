@@ -82,6 +82,31 @@ def logout():
     return redirect(url_for("auth.login"))
 
 
+@auth_bp.route("/account/contratado", methods=["POST"])
+@login_required
+def account_contratado():
+    """Grava o perfil de contratado — os dados de quem presta o serviço.
+
+    Preenchido automaticamente no primeiro contrato; esta rota existe para
+    corrigi-lo depois, já que a seção some do formulário assim que existe.
+    """
+    from .contracts import CAMPOS_CONTRATADO
+
+    nome = request.form.get("contratado_nome", "").strip()
+    documento = request.form.get("contratado_documento", "").strip()
+    if not nome or not documento:
+        flash("Nome e documento do contratado são obrigatórios.", "danger")
+        return redirect(url_for("auth.account"))
+
+    for campo in CAMPOS_CONTRATADO:
+        valor = request.form.get(f"contratado_{campo}")
+        if valor is not None:
+            setattr(current_user, f"contratado_{campo}", valor.strip())
+    db.session.commit()
+    flash("Dados de contratado atualizados.", "success")
+    return redirect(url_for("auth.account"))
+
+
 @auth_bp.route("/account", methods=["GET", "POST"])
 @login_required
 def account():
