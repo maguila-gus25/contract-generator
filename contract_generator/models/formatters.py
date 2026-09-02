@@ -13,3 +13,12 @@ def formatar_percentual(valor: float) -> str:
     if numero == int(numero):
         return f"{int(numero)}%"
     return f"{numero:.2f}".rstrip("0").rstrip(".").replace(".", ",") + "%"
+
+
+MESES = ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho",
+         "agosto", "setembro", "outubro", "novembro", "dezembro")
+
+
+def data_por_extenso(data) -> str:
+    """Formata a data do fecho do contrato: '21 de agosto de 2026'."""
+    return f"{data.day} de {MESES[data.month - 1]} de {data.year}"

@@ -194,6 +194,53 @@ núcleo estão `valor_metade_1` e `valor_metade_2`: a divisão do total em duas
 parcelas é feita em centavos, e a primeira absorve o centavo ímpar para o par
 sempre fechar com o valor do contrato.
 
+#### Cláusulas com itens e desdobramentos
+
+Além de `conteudo` (o caput), uma cláusula aceita `itens` — enumeração de até
+dois níveis — e `desdobramentos` — os parágrafos em prosa que vêm depois
+("Parágrafo primeiro:", "Parágrafo único:"), que **não** viram itens.
+
+```json
+{
+  "numero": 1,
+  "titulo": "DAS DEFINIÇÕES",
+  "conteudo": "Para fins de entendimento, estabelecem-se as definições:",
+  "itens": [
+    {"texto": "Ensaio Fotográfico: sessão de fotos (…)"},
+    {"texto": "Propriedade de imagem:", "subitens": [
+      "detentor da imagem é a pessoa captada na imagem;",
+      "detentor dos direitos autorais é quem capta as imagens."
+    ]}
+  ],
+  "desdobramentos": ["Parágrafo único: (…)"]
+}
+```
+
+A numeração **não fica no texto**: os geradores a calculam — romano minúsculo
+no primeiro nível (`i.`, `ii.`), letra no segundo (`a)`, `b)`), e romano
+maiúsculo na cláusula (`CLÁUSULA VI – …`, de `clausula.numero`). Reordenar
+itens no JSON não deixa rótulo para trás. São só dois níveis; não generalizar.
+
+`Clausula` expõe `cabecalho()`, `caput(dados)`, `itens_formatados(dados)` e
+`desdobramentos_formatados(dados)` — a interpolação dos placeholders acontece
+aí, e um placeholder sem origem sai cru em vez de derrubar o documento.
+
+#### Como o documento é montado
+
+- **Qualificação das partes** — `Parte.qualificacao()` monta a prosa
+  (`Fulano, CPF nº …, com domicílio na …, contato pelo telefone … e e-mail …`)
+  omitindo o que não existe no cadastro: sem endereço some o domicílio, sem
+  contato some o trecho inteiro. Nunca sai `Número ,` nem vírgula órfã.
+- **PDF** (`pdf_generator.py`) — A4, Barlow Condensed nos títulos e Source
+  Serif no corpo justificado, hierarquia por recuo (caput na margem, itens e
+  desdobramentos recuados) e espaçamento maior entre cláusulas do que entre
+  parágrafos. Título só na página 1; rodapé "Página X de Y" em todas.
+- **DOCX** (`docx_generator.py`) — mesma **estrutura**, sem o refino
+  tipográfico: o arquivo existe para ser editado à mão.
+- **Fontes** — `contract_generator/assets/fonts/` (SIL OFL). São embutidas
+  porque as fontes core do PDF não cobrem os acentuados; por isso o
+  `.vercelignore` **não** pode excluí-las. Ver o README da pasta.
+
 **Ao criar um tipo novo:** adicione o JSON, o rótulo em `TIPOS_LABEL`
 (`generators/base.py`), o rótulo em `ContractRecord.type_label()`
 (`app/models.py`) e a `<option>` em `new_contract.html`. Todo placeholder
