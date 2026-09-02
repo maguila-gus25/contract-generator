@@ -40,10 +40,22 @@ class Contrato:
         if not self.clausulas:
             raise ValueError("O contrato deve ter pelo menos uma cláusula.")
 
+    def metades_do_pagamento(self) -> tuple:
+        """Divide o valor em duas metades, em centavos.
+
+        A divisão é feita sobre o inteiro de centavos e a primeira metade
+        absorve o centavo ímpar (R$ 901,01 vira 450,51 + 450,50), para nunca
+        faltar nem sobrar dinheiro em relação ao total do contrato.
+        """
+        centavos = round(self.valor * 100)
+        primeira = centavos - centavos // 2
+        return primeira / 100, (centavos // 2) / 100
+
     def to_dict(self) -> dict:
         end_contratante = self.contratante.endereco.formatado() if self.contratante.endereco else ""
         end_contratado = self.contratado.endereco.formatado() if self.contratado.endereco else ""
         valor_fmt = formatar_moeda(self.valor)
+        metade_1, metade_2 = self.metades_do_pagamento()
         dados = {
             "tipo": self.tipo,
             "numero": self.numero,
@@ -67,6 +79,8 @@ class Contrato:
             "contratado_cidade": (self.contratado.endereco.cidade
                                   if self.contratado.endereco else ""),
             "valor": valor_fmt,
+            "valor_metade_1": formatar_moeda(metade_1),
+            "valor_metade_2": formatar_moeda(metade_2),
             "forma_pagamento": self.forma_pagamento,
             "descricao_servico": self.descricao_servico,
             "observacoes": self.observacoes,

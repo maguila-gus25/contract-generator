@@ -4,7 +4,8 @@ Um template é um JSON em ``contract_generator/templates/<tipo>.json``. Aceita
 dois formatos:
 
 - lista de cláusulas (formato original);
-- objeto com ``campos`` (parâmetros extras do tipo) e ``clausulas``.
+- objeto com ``campos`` (parâmetros extras do tipo), ``descricao_padrao``
+  (texto sugerido para a descrição do objeto) e ``clausulas``.
 
 Os ``campos`` descrevem valores que variam de contrato para contrato mas não
 existem no formulário padrão — horas de trabalho, entrada, prazos, multas.
@@ -102,7 +103,11 @@ def listar_tipos_disponiveis() -> list:
 
 
 def ler_template(tipo_contrato: str) -> dict:
-    """Lê o JSON do tipo e devolve sempre ``{"campos": [...], "clausulas": [...]}``.
+    """Lê o JSON do tipo, normalizado para o formato de objeto.
+
+    Devolve sempre ``{"campos": [...], "descricao_padrao": str,
+    "clausulas": [...]}``, mesmo quando o arquivo é a lista pura de cláusulas
+    do formato original.
 
     Raises:
         FileNotFoundError: se não existir template para o tipo informado.
@@ -122,9 +127,10 @@ def ler_template(tipo_contrato: str) -> dict:
             raise ValueError(f"Erro ao ler o template '{tipo_contrato}': {e}")
 
     if isinstance(dados, list):
-        return {"campos": [], "clausulas": dados}
+        return {"campos": [], "descricao_padrao": "", "clausulas": dados}
     return {
         "campos": dados.get("campos", []),
+        "descricao_padrao": dados.get("descricao_padrao", ""),
         "clausulas": dados.get("clausulas", []),
     }
 
@@ -132,6 +138,12 @@ def ler_template(tipo_contrato: str) -> dict:
 def carregar_campos_extras(tipo_contrato: str) -> list:
     """Retorna os CampoExtra declarados pelo template do tipo."""
     return [CampoExtra(**item) for item in ler_template(tipo_contrato)["campos"]]
+
+
+def descricao_padrao_por_tipo() -> dict:
+    """Mapa ``{tipo: descricao_padrao}`` para o formulário pré-preencher."""
+    return {tipo: ler_template(tipo)["descricao_padrao"]
+            for tipo in listar_tipos_disponiveis()}
 
 
 def campos_extras_por_tipo() -> dict:

@@ -43,15 +43,29 @@
         <div class="col-md-4">
           <label class="form-label fw-semibold">Forma de Pagamento <span class="text-danger">*</span></label>
           <input type="text" name="payment_method" class="form-control"
+                 id="pagamento-livre"
                  placeholder="ex: mensal, à vista, parcelado"
                  value="{{ form_data.get('payment_method', '') }}" required>
+          <select name="payment_method" class="form-select" id="pagamento-meios"
+                  hidden disabled>
+            {% for meio in ('PIX', 'Dinheiro', 'Cartão de crédito',
+                            'Cartão de débito', 'Transferência bancária') %}
+            <option value="{{ meio }}"
+                    {% if form_data.get('payment_method', 'PIX') == meio %}selected{% endif %}>
+              {{ meio }}
+            </option>
+            {% endfor %}
+          </select>
         </div>
         <div class="col-md-4">
-          <label class="form-label fw-semibold">Data de Início <span class="text-danger">*</span></label>
+          <label class="form-label fw-semibold">
+            <span id="rotulo-data-inicio">Data de Início</span>
+            <span class="text-danger">*</span>
+          </label>
           <input type="date" name="start_date" class="form-control"
                  value="{{ form_data.get('start_date', '') }}" required>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-4" id="campo-data-fim">
           <label class="form-label fw-semibold">Data de Fim</label>
           <input type="date" name="end_date" class="form-control"
                  value="{{ form_data.get('end_date', '') }}">
@@ -282,6 +296,7 @@
 
 {% block scripts %}
 <script id="agenda-de-clientes" type="application/json">{{ clientes | tojson }}</script>
+<script id="descricoes-padrao" type="application/json">{{ descricoes_padrao | tojson }}</script>
 <script src="{{ url_for('static', filename='js/clients.js') }}"></script>
 <script src="{{ url_for('static', filename='js/cep.js') }}"></script>
 <script src="{{ url_for('static', filename='js/contract_fields.js') }}"></script>
