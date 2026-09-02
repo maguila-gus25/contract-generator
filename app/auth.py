@@ -8,15 +8,25 @@ from .models import User
 auth_bp = Blueprint("auth", __name__)
 
 
-def validar_senha(senha: str):
-    """Valida a força da senha. Retorna mensagem de erro ou None se ok."""
-    if len(senha) < 8:
-        return "A senha deve ter pelo menos 8 caracteres."
+SENHA_MIN = 8
+
+# Descrição legível das regras, exibida no formulário. Fica ao lado de
+# erros_senha() para os dois não voltarem a divergir (ver issue #12).
+SENHA_REQUISITOS = (
+    f"Mínimo {SENHA_MIN} caracteres, com pelo menos uma letra e um número."
+)
+
+
+def erros_senha(senha: str) -> list[str]:
+    """Retorna todos os requisitos de senha não atendidos (vazio se ok)."""
+    erros = []
+    if len(senha) < SENHA_MIN:
+        erros.append(f"A senha deve ter pelo menos {SENHA_MIN} caracteres.")
     if not any(c.isalpha() for c in senha):
-        return "A senha deve conter pelo menos uma letra."
+        erros.append("A senha deve conter pelo menos uma letra.")
     if not any(c.isdigit() for c in senha):
-        return "A senha deve conter pelo menos um número."
-    return None
+        erros.append("A senha deve conter pelo menos um número.")
+    return erros
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -53,13 +63,14 @@ def register():
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
 
-        erro_senha = validar_senha(password)
+        erros = erros_senha(password) if password else []
         if not name or not email or not password:
             flash("Todos os campos são obrigatórios.", "danger")
         elif password != confirm:
             flash("As senhas não coincidem.", "danger")
-        elif erro_senha:
-            flash(erro_senha, "danger")
+        elif erros:
+            for erro in erros:
+                flash(erro, "danger")
         elif User.query.filter_by(email=email).first():
             flash("Este e-mail já está cadastrado.", "danger")
         else:
@@ -71,7 +82,11 @@ def register():
             flash("Conta criada com sucesso!", "success")
             return redirect(url_for("contracts.dashboard"))
 
-    return render_template("register.html")
+        # Mantém nome e e-mail preenchidos quando o cadastro falha.
+        return render_template("register.html", name=name, email=email,
+                               requisitos_senha=SENHA_REQUISITOS)
+
+    return render_template("register.html", requisitos_senha=SENHA_REQUISITOS)
 
 
 @auth_bp.route("/logout")
@@ -137,13 +152,14 @@ def change_password():
         nova = request.form.get("new_password", "")
         confirm = request.form.get("confirm_password", "")
 
-        erro_senha = validar_senha(nova)
+        erros = erros_senha(nova)
         if not current_user.check_password(atual):
             flash("Senha atual incorreta.", "danger")
         elif nova != confirm:
             flash("As senhas não coincidem.", "danger")
-        elif erro_senha:
-            flash(erro_senha, "danger")
+        elif erros:
+            for erro in erros:
+                flash(erro, "danger")
         else:
             current_user.set_password(nova)
             db.session.commit()

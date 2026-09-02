@@ -90,7 +90,7 @@ def test_extras_nao_sobrescrevem_campos_do_nucleo():
     from contract_generator.models.contract import Contrato
     from contract_generator.models.party import Parte
 
-    parte = Parte("Ana", "12345678901", "CPF", "", "")
+    parte = Parte("Ana", "12345678909", "CPF", "", "")
     contrato = Contrato(
         tipo="fotografia", numero="1/2026", data_criacao=date(2026, 1, 1),
         data_inicio=date(2026, 1, 1), data_fim=None,
@@ -117,7 +117,7 @@ DADOS_BASE = {
     "payment_method": "PIX", "start_date": "2026-08-21", "end_date": "",
     "description": "Ensaio externo",
     "contratante_nome": "Maria", "contratante_tipo_documento": "CPF",
-    "contratante_documento": "12345678901", "contratante_cidade": "Florianópolis",
+    "contratante_documento": "12345678909", "contratante_cidade": "Florianópolis",
     "contratado_nome": "Ana", "contratado_tipo_documento": "CPF",
     "contratado_documento": "98765432100",
 }
@@ -207,7 +207,7 @@ def test_metades_do_pagamento_fecham_com_o_total(valor, esperado):
     from contract_generator.models.contract import Contrato
     from contract_generator.models.party import Parte
 
-    parte = Parte("Ana", "12345678901", "CPF", "", "")
+    parte = Parte("Ana", "12345678909", "CPF", "", "")
     contrato = Contrato(
         tipo="fotografia", data_criacao=date(2026, 1, 1),
         data_inicio=date(2026, 1, 1), data_fim=None,
@@ -228,7 +228,7 @@ def test_metades_nao_podem_ser_sobrescritas_por_um_template():
     from contract_generator.models.contract import Contrato
     from contract_generator.models.party import Parte
 
-    parte = Parte("Ana", "12345678901", "CPF", "", "")
+    parte = Parte("Ana", "12345678909", "CPF", "", "")
     contrato = Contrato(
         tipo="fotografia", data_criacao=date(2026, 1, 1),
         data_inicio=date(2026, 1, 1), data_fim=None,
@@ -238,3 +238,26 @@ def test_metades_nao_podem_ser_sobrescritas_por_um_template():
         extras={"valor_metade_1": "R$ 1,00"},
     )
     assert contrato.to_dict()["valor_metade_1"] == "R$ 450,00"
+
+
+def test_cpf_invalido_no_formulario_nao_gera_contrato(client, app):
+    """POST com CPF inválido volta com erro no campo e não salva nada."""
+    from app.models import ContractRecord
+
+    registrar(client)
+    dados = dict(DADOS_BASE, contratante_documento="12345678901")
+    resp = client.post("/contracts/new", data=dados, follow_redirects=True)
+    html = resp.get_data(as_text=True)
+
+    assert "CPF inválido" in html
+    with app.app_context():
+        assert ContractRecord.query.count() == 0
+
+
+def test_vigencia_invertida_no_formulario_e_reportada(client, app):
+    registrar(client)
+    dados = dict(DADOS_BASE, start_date="2026-12-01", end_date="2026-01-01")
+    resp = client.post("/contracts/new", data=dados, follow_redirects=True)
+    assert "anterior à data de início" in resp.get_data(as_text=True)
+
+

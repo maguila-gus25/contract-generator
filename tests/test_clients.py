@@ -16,7 +16,7 @@ DADOS_CONTRATO = {
 }
 
 
-def _criar_cliente(app, user_id, nome="Cliente X", documento="11122233344"):
+def _criar_cliente(app, user_id, nome="Cliente X", documento="11122233396"):
     with app.app_context():
         cliente = Client(user_id=user_id, nome=nome, documento=documento,
                          tipo_documento="CPF")
@@ -113,7 +113,7 @@ def test_editar_cliente_exige_nome_e_documento(client, app):
     cliente_id = _criar_cliente(app, user_id, nome="Antes")
 
     resp = client.post(f"/clientes/{cliente_id}/editar",
-                       data={"nome": "", "documento": "11122233344"},
+                       data={"nome": "", "documento": "11122233396"},
                        follow_redirects=True)
     assert "obrigatórios" in resp.get_data(as_text=True)
 

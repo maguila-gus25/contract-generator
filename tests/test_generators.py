@@ -42,7 +42,7 @@ def _cliente_completo():
 
 
 def _cliente_minimo():
-    return Parte("Só Nome", "11122233344", "CPF", "", "")
+    return Parte("Só Nome", "11122233396", "CPF", "", "")
 
 
 def _texto_do_docx(caminho):
@@ -127,7 +127,7 @@ def test_qualificacao_completa():
 
 def test_qualificacao_de_quem_so_tem_nome_e_cpf():
     """Sem vírgula órfã, sem 'Número ,' — o trecho inteiro some."""
-    assert _cliente_minimo().qualificacao() == "Só Nome, CPF nº 111.222.333-44."
+    assert _cliente_minimo().qualificacao() == "Só Nome, CPF nº 111.222.333-96."
 
 
 @pytest.mark.parametrize("email, telefone, esperado", [
@@ -136,15 +136,15 @@ def test_qualificacao_de_quem_so_tem_nome_e_cpf():
     ("", "", "."),
 ])
 def test_qualificacao_adapta_o_contato_ao_que_existe(email, telefone, esperado):
-    parte = Parte("Fulano", "11122233344", "CPF", email, telefone)
+    parte = Parte("Fulano", "11122233396", "CPF", email, telefone)
     assert parte.qualificacao().endswith(esperado)
 
 
 def test_endereco_parcial_nao_produz_pontuacao_orfa():
     endereco = Endereco("", "", "", "", "", "Florianópolis", "SC")
-    parte = Parte("Fulano", "11122233344", "CPF", "", "", endereco)
+    parte = Parte("Fulano", "11122233396", "CPF", "", "", endereco)
     assert parte.qualificacao() == (
-        "Fulano, CPF nº 111.222.333-44, com domicílio na Florianópolis."
+        "Fulano, CPF nº 111.222.333-96, com domicílio na Florianópolis."
     )
 
 

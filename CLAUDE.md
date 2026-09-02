@@ -142,7 +142,18 @@ O formulário de contrato não pede mais os dados das partes a cada vez:
 
 `ContractRecord.number` continua `NOT NULL`, mas deixou de ser um input: recebe
 um valor derivado (`derivar_numero()` → `isabel-terra-2026-08-21`) que não
-aparece em tela nenhuma e serve só para nomear o arquivo baixado.
+aparece em tela nenhuma e serve só para nomear o arquivo baixado. A geração de
+sequencial `NNN/AAAA` da issue #13 foi removida na integração — a decisão de
+projeto é que o número não existe, não que ele seja automático.
+
+### Validação
+
+`contract_generator/models/validators.py` valida CPF/CNPJ (dígitos
+verificadores), telefone e CEP, e formata os dois últimos. A validação é
+**bloqueante em duas camadas**: `Parte.validar()` levanta `ValueError`, e
+`_validar_form()` (`app/contracts.py`) roda antes de montar o `Contrato` para
+devolver `{campo: mensagem}` e destacar o erro junto ao input. Documento falso
+em teste derruba a geração — use CPF com dígito verificador válido.
 
 Colunas adicionadas a tabelas que já existem em produção entram em
 `COLUNAS_ADICIONADAS` (`app/__init__.py`) e são aplicadas por

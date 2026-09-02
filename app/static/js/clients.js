@@ -33,6 +33,19 @@
       porId[String(cliente.id)] = cliente;
     });
 
+    // Contato e endereço ficam recolhidos num collapse. Se o cliente escolhido
+    // tem algum desses dados, abrimos o bloco — preencher campo invisível
+    // esconde do usuário o que foi para o contrato.
+    var OPCIONAIS = ["email", "telefone", "cep", "logradouro", "numero",
+                     "complemento", "bairro", "cidade", "estado"];
+
+    function abrirOpcionais() {
+      var bloco = document.getElementById("extra-contratante");
+      if (bloco && !bloco.classList.contains("show")) {
+        bloco.classList.add("show");
+      }
+    }
+
     seletor.addEventListener("change", function () {
       var cliente = porId[seletor.value];
       CAMPOS.forEach(function (campo) {
@@ -44,6 +57,13 @@
           input.value = cliente ? cliente[campo] || "" : "";
         }
       });
+
+      var temOpcional = cliente && OPCIONAIS.some(function (campo) {
+        return cliente[campo];
+      });
+      if (temOpcional) {
+        abrirOpcionais();
+      }
     });
   });
 })();
