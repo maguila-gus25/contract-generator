@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import os
-import unicodedata
 
 
 # Rótulo exibido no título do documento para cada tipo de contrato.
@@ -12,19 +11,9 @@ TIPOS_LABEL = {
 }
 
 
-def rotulo_tipo(tipo: str, sem_acento: bool = False) -> str:
-    """Retorna o rótulo do tipo de contrato para uso no título do documento.
-
-    Args:
-        tipo: chave do tipo, ex: "servico".
-        sem_acento: remove os acentos — o PDF usa a fonte core Helvetica,
-            que não cobre os caracteres acentuados.
-    """
-    label = TIPOS_LABEL.get(tipo, tipo.upper())
-    if sem_acento:
-        label = (unicodedata.normalize("NFKD", label)
-                 .encode("ascii", "ignore").decode("ascii"))
-    return label
+def rotulo_tipo(tipo: str) -> str:
+    """Retorna o rótulo do tipo de contrato para uso no título do documento."""
+    return TIPOS_LABEL.get(tipo, tipo.upper())
 
 
 class GeradorBase(ABC):

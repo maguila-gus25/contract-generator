@@ -1,3 +1,5 @@
+# As fontes de contract_generator/assets/fonts/ precisam ir no bundle:
+# sem elas o PdfGenerator não consegue registrar as faces e quebra.
 venv/
 .venv/
 tests/

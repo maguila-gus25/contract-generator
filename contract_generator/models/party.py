@@ -20,6 +20,22 @@ class Endereco:
         partes.append(f"CEP: {self.cep}")
         return ", ".join(partes)
 
+    def por_extenso(self) -> str:
+        """Endereço em prosa, omitindo o que não foi preenchido.
+
+        Um cadastro incompleto não pode produzir 'Número ,' nem vírgula
+        órfã no meio da qualificação da parte.
+        """
+        partes = []
+        if self.logradouro:
+            partes.append(self.logradouro)
+        if self.numero:
+            partes.append(f"Número {self.numero}")
+        for campo in (self.complemento, self.bairro, self.cidade):
+            if campo:
+                partes.append(campo)
+        return ", ".join(partes)
+
     def __repr__(self) -> str:
         return f"Endereco(cidade={self.cidade!r}, estado={self.estado!r})"
 
@@ -42,6 +58,28 @@ class Parte:
             raise ValueError("Tipo de documento deve ser 'CPF' ou 'CNPJ'.")
         if self.email and not re.match(r"[^@]+@[^@]+\.[^@]+", self.email):
             raise ValueError(f"E-mail inválido: {self.email}")
+
+    def qualificacao(self) -> str:
+        """A parte em prosa, como aparece na abertura do contrato.
+
+        Cada trecho só entra se houver dado: sem endereço some o domicílio,
+        sem telefone e e-mail some o contato.
+        """
+        texto = f"{self.nome}, {self.tipo_documento} nº {self.documento_formatado()}"
+
+        endereco = self.endereco.por_extenso() if self.endereco else ""
+        if endereco:
+            texto += f", com domicílio na {endereco}"
+
+        contatos = []
+        if self.telefone:
+            contatos.append(f"telefone {self.telefone}")
+        if self.email:
+            contatos.append(f"e-mail {self.email}")
+        if contatos:
+            texto += ", contato pelo " + " e ".join(contatos)
+
+        return texto + "."
 
     def documento_formatado(self) -> str:
         doc = re.sub(r"\D", "", self.documento)
