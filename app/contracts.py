@@ -151,13 +151,17 @@ def dashboard():
     return render_template("dashboard.html", contratos=contratos)
 
 
-def _campos_por_tipo() -> dict:
-    """Campos extras de cada tipo, para o formulário montar as seções."""
+def _contexto_do_formulario() -> dict:
+    """O que o formulário precisa dos templates: campos e descrições padrão."""
     import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-    from contract_generator.models.template import campos_extras_por_tipo
+    from contract_generator.models.template import (campos_extras_por_tipo,
+                                                    descricao_padrao_por_tipo)
 
-    return campos_extras_por_tipo()
+    return {
+        "campos_por_tipo": campos_extras_por_tipo(),
+        "descricoes_padrao": descricao_padrao_por_tipo(),
+    }
 
 
 def _clientes_do_usuario() -> list:
@@ -180,8 +184,8 @@ def new_contract():
         except (ValueError, KeyError) as e:
             flash(f"Erro nos dados do contrato: {e}", "danger")
             return render_template("new_contract.html", form_data=form_data,
-                                   campos_por_tipo=_campos_por_tipo(),
-                                   clientes=_clientes_do_usuario())
+                                   clientes=_clientes_do_usuario(),
+                                   **_contexto_do_formulario())
 
         uid = uuid.uuid4().hex[:8]
         base_path = os.path.join(OUTPUT_DIR, f"contrato_{uid}")
@@ -231,8 +235,8 @@ def new_contract():
         return redirect(url_for("contracts.dashboard"))
 
     return render_template("new_contract.html", form_data={},
-                           campos_por_tipo=_campos_por_tipo(),
-                           clientes=_clientes_do_usuario())
+                           clientes=_clientes_do_usuario(),
+                           **_contexto_do_formulario())
 
 
 @contracts_bp.route("/api/cep/<cep>")

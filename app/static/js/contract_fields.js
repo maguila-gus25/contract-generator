@@ -1,8 +1,11 @@
-// Mostra os parâmetros declarados pelo template do tipo de contrato escolhido
-// (horas, entrada, prazos, multas...) e esconde os dos demais tipos.
+// Ajusta o formulário ao tipo de contrato escolhido.
 //
-// Os inputs escondidos ficam `disabled` para não irem no POST — assim o
-// servidor só recebe os campos do tipo realmente selecionado.
+// Governa duas coisas: os parâmetros que o template do tipo declara (a seção
+// "Condições do Contrato") e os campos fixos que mudam de forma ou de rótulo
+// — data de fim, rótulo da data de início, forma de pagamento e descrição.
+//
+// Tudo que fica escondido também fica `disabled`, para não ir no POST: o
+// servidor só recebe o que vale para o tipo realmente selecionado.
 (function () {
   "use strict";
 
@@ -23,42 +26,83 @@
     });
   }
 
-  seletorTipo.addEventListener("change", alternarSecoes);
-  alternarSecoes();
+  // --- Campos fixos que mudam com o tipo -----------------------------------
+  // A fotografia é um ensaio de um dia só, pago por um meio conhecido: não
+  // tem data de fim, a data de início é a data do ensaio e o pagamento vira
+  // uma lista em vez de texto livre.
+  var REGRAS = {
+    fotografia: {
+      dataFim: false,
+      rotuloDataInicio: "Data do ensaio",
+      pagamentoEmLista: true,
+    },
+  };
+  var PADRAO = {
+    dataFim: true,
+    rotuloDataInicio: "Data de Início",
+    pagamentoEmLista: false,
+  };
 
-  // --- Entrada e saldo -----------------------------------------------------
-  // Convenção dos templates: quando existem os campos `valor_entrada` e
-  // `valor_saldo`, eles se dividem no valor total do contrato. A entrada é
-  // sugerida como metade e o saldo é o que sobra — ambos continuam editáveis.
-  var campoValor = document.querySelector('input[name="value"]');
-  var entrada = document.querySelector('input[data-campo="valor_entrada"]');
-  var saldo = document.querySelector('input[data-campo="valor_saldo"]');
-  if (!campoValor || !entrada || !saldo) {
-    return;
+  var campoDataFim = document.getElementById("campo-data-fim");
+  var rotuloDataInicio = document.getElementById("rotulo-data-inicio");
+  var pagamentoLivre = document.getElementById("pagamento-livre");
+  var pagamentoMeios = document.getElementById("pagamento-meios");
+  var descricao = document.querySelector('textarea[name="description"]');
+
+  function lerJson(id) {
+    var script = document.getElementById(id);
+    try {
+      return script ? JSON.parse(script.textContent) || {} : {};
+    } catch (e) {
+      return {};
+    }
   }
 
-  var entradaEditadaPeloUsuario = entrada.value.trim() !== "";
+  var descricoesPadrao = lerJson("descricoes-padrao");
 
-  function arredondar(numero) {
-    return Math.round(numero * 100) / 100;
-  }
-
-  function recalcular() {
-    var total = parseFloat(campoValor.value);
-    if (isNaN(total)) {
+  function mostrar(elemento, visivel) {
+    if (!elemento) {
       return;
     }
-    if (!entradaEditadaPeloUsuario) {
-      entrada.value = arredondar(total / 2);
-    }
-    var pago = parseFloat(entrada.value);
-    saldo.value = arredondar(isNaN(pago) ? total : Math.max(total - pago, 0));
+    elemento.hidden = !visivel;
+    elemento.disabled = !visivel;
   }
 
-  campoValor.addEventListener("input", recalcular);
-  entrada.addEventListener("input", function () {
-    entradaEditadaPeloUsuario = entrada.value.trim() !== "";
-    recalcular();
-  });
-  recalcular();
+  function ehPadraoDeAlgumTipo(texto) {
+    return Object.keys(descricoesPadrao).some(function (tipo) {
+      return descricoesPadrao[tipo] && descricoesPadrao[tipo] === texto;
+    });
+  }
+
+  function ajustarCamposFixos() {
+    var regra = REGRAS[seletorTipo.value] || PADRAO;
+
+    if (campoDataFim) {
+      campoDataFim.hidden = !regra.dataFim;
+      campoDataFim.querySelectorAll("input").forEach(function (input) {
+        input.disabled = !regra.dataFim;
+      });
+    }
+    if (rotuloDataInicio) {
+      rotuloDataInicio.textContent = regra.rotuloDataInicio;
+    }
+    mostrar(pagamentoLivre, !regra.pagamentoEmLista);
+    mostrar(pagamentoMeios, regra.pagamentoEmLista);
+
+    // A descrição só é sobrescrita quando está vazia ou ainda tem o padrão
+    // de outro tipo — o que o usuário escreveu nunca se perde.
+    var padrao = descricoesPadrao[seletorTipo.value] || "";
+    if (descricao && (descricao.value.trim() === ""
+                      || ehPadraoDeAlgumTipo(descricao.value.trim()))) {
+      descricao.value = padrao;
+    }
+  }
+
+  function ajustar() {
+    alternarSecoes();
+    ajustarCamposFixos();
+  }
+
+  seletorTipo.addEventListener("change", ajustar);
+  ajustar();
 })();
